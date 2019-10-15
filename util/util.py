@@ -1,6 +1,10 @@
+from collections import Counter
+from typing import List
+
+
 class FileTreeNode:
 
-    def __init__(self, directory, files, children=None):
+    def __init__(self, directory: str, files: List, children: List = None):
         if children is None:
             children = []
 
@@ -8,7 +12,28 @@ class FileTreeNode:
         self.directory = directory
         self.children = children
 
-    def __repr__(self, level=0):
+    def __eq__(self, o: object) -> bool:
+        if isinstance(o, FileTreeNode):
+            fields_equal = o.directory == self.directory and set(o.files) == set(self.files)
+
+            if not fields_equal:
+                return False
+
+            if self.children == [] and o.children == []:
+                return fields_equal
+
+            children = sorted(self.children, key=lambda node: node.directory)
+            objects_children = sorted(o.children, key=lambda node: node.directory)
+
+            for n1, n2 in zip(children, objects_children):
+                if n1 != n2:
+                    return False
+
+            return fields_equal
+
+        return False
+
+    def __repr__(self, level=0) -> str:
         result = "\t" * level + str(self.directory) + " # " + str(list(self.files)) + "\n"
 
         for child in self.children:

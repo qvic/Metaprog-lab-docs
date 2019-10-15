@@ -24,8 +24,10 @@ class Parser:
         for root, dirs, files in file_hierarchy_list:
             last_node = stack.pop()
 
+            print(root)
+            print(files)
             filtered_files = filter(lambda file: os.path.splitext(file)[1] in self.ACCEPTED_EXTENSIONS, files)
-            last_node.files = map(lambda file: os.path.join(root, file), filtered_files)
+            last_node.files = list(map(lambda file: os.path.join(root, file), filtered_files))
 
             for directory in reversed(dirs):
                 node = FileTreeNode(directory, [])

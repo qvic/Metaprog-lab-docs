@@ -25,10 +25,20 @@ class TestParser(TestCase):
         :return:
         """
 
+        # print(self.parser._generate_tree_from_list(self.parser._list_files_hierarchy("testdata")))
+
         tree = self.parser._generate_tree_from_list(
             [('a', ['b'], []),
-             ('b', ['c', 'd'], ['f1.java']),
-             ('c', [], ['f2.java', 'f3.java']),
-             ('d', [], ['f4.java'])])
+             ('a/b', ['c', 'd'], ['f1.java']),
+             ('a/b/c', [], ['f2.java', 'f3.java']),
+             ('a/b/d', [], ['f4.java'])])
 
+        expected_tree = FileTreeNode('a', [],
+                                     [FileTreeNode('b', ['a/b/f1.java'],
+                                                   [FileTreeNode('c', ['a/b/c/f2.java', 'a/b/c/f3.java'], []),
+                                                    FileTreeNode('d', ['a/b/d/f4.java'], [])])])
+
+        print(expected_tree)
         print(tree)
+
+        self.assertEqual(tree, expected_tree)
