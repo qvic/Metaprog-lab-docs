@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from parser.parser import Parser
-from util.util import FileTreeNode
+from util.util import FileTreeNode, SourceFile
 
 
 class TestParser(TestCase):
@@ -34,11 +34,8 @@ class TestParser(TestCase):
              ('a/b/d', [], ['f4.java'])])
 
         expected_tree = FileTreeNode('a', [],
-                                     [FileTreeNode('b', ['a/b/f1.java'],
-                                                   [FileTreeNode('c', ['a/b/c/f2.java', 'a/b/c/f3.java'], []),
-                                                    FileTreeNode('d', ['a/b/d/f4.java'], [])])])
-
-        print(expected_tree)
-        print(tree)
+                                     [FileTreeNode('b', [SourceFile('a/b/f1.java')],
+                                                   [FileTreeNode('c', [SourceFile('a/b/c/f2.java'), SourceFile('a/b/c/f3.java')], []),
+                                                    FileTreeNode('d', [SourceFile('a/b/d/f4.java')], [])])])
 
         self.assertEqual(tree, expected_tree)

@@ -44,5 +44,33 @@ class FileTreeNode:
 
 class SourceFile:
 
-    def __init__(self, file_path):
+    def __init__(self, file_path: str):
         self.file_path = file_path
+
+    def search_for_docs(self):
+        with open(self.file_path, 'r') as file:
+            current_doc = ''
+            in_doc = False
+
+            for line in file:
+                line = line.strip()
+
+                if line.startswith('/**'):
+                    in_doc = True
+                elif in_doc and line.startswith('*/'):
+                    in_doc = False
+                    yield current_doc
+                    current_doc = ''
+                elif in_doc:
+                    current_doc += line + '\n'
+
+    def __repr__(self) -> str:
+        return 'SourceFile[' + self.file_path + ']'
+
+    def __eq__(self, o: object) -> bool:
+        if isinstance(o, SourceFile):
+            return self.file_path == o.file_path
+        return False
+
+    def __hash__(self) -> int:
+        return hash(self.file_path)
