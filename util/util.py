@@ -1,5 +1,13 @@
+import os
 from collections import Counter
 from typing import List
+
+
+class Helpers:
+
+    @staticmethod
+    def get_file_extension(file_path):
+        return os.path.splitext(file_path)[1]
 
 
 class FileTreeNode:
@@ -47,22 +55,10 @@ class SourceFile:
     def __init__(self, file_path: str):
         self.file_path = file_path
 
-    def search_for_docs(self):
+    def lines(self):
         with open(self.file_path, 'r') as file:
-            current_doc = ''
-            in_doc = False
-
             for line in file:
-                line = line.strip()
-
-                if line.startswith('/**'):
-                    in_doc = True
-                elif in_doc and line.startswith('*/'):
-                    in_doc = False
-                    yield current_doc
-                    current_doc = ''
-                elif in_doc:
-                    current_doc += line + '\n'
+                yield line
 
     def __repr__(self) -> str:
         return 'SourceFile[' + self.file_path + ']'
@@ -74,3 +70,23 @@ class SourceFile:
 
     def __hash__(self) -> int:
         return hash(self.file_path)
+
+
+class Signature:
+
+    def __init__(self, annotations: List, access_modifier: str, name: str):
+        self.annotations = annotations
+        self.access_modifier = access_modifier
+        self.name = []
+
+
+class ClassSignature(Signature):
+
+    def __init__(self, annotations, access_modifier, name, extends_list):
+        super().__init__(annotations, access_modifier, name)
+
+
+class MethodSignature(Signature):
+
+    def __init__(self, annotations, access_modifier, return_type: str, name):
+        super().__init__(annotations, access_modifier, name)
