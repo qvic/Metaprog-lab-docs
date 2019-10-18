@@ -1,21 +1,25 @@
+import itertools
 from abc import ABC, abstractmethod
 
 
-class Event:
+class CharacterEvent:
 
-    def __init__(self, character_met, lookahead):
-        self.character_met = character_met
-        self.lookahead = lookahead
+    def __init__(self, character_index: int, file_contents: str):
+        self.character_met: str = file_contents[character_index]
+        self._lookahead = itertools.islice(file_contents, character_index + 1, len(file_contents))
 
     def __repr__(self) -> str:
-        return 'Event[{0}:{1}]'.format(repr(self.character_met), repr(self.lookahead))
+        return 'CharacterEvent[{0}]'.format(repr(self.character_met))
+
+    def lookahead(self, n):
+        return ''.join(itertools.islice(self._lookahead, n))
 
 
 # todo metaclass singleton
 class State(ABC):
 
     @abstractmethod
-    def on_event(self, event: Event):
+    def on_event(self, event: CharacterEvent):
         pass
 
     def __repr__(self) -> str:
@@ -24,19 +28,29 @@ class State(ABC):
 
 class InitialState(State):
 
-    def on_event(self, event: Event) -> State:
+    def on_event(self, event: CharacterEvent) -> State:
         if event.character_met == '/':
-            if event.lookahead == '*':
-                return SkipState(MultilineCommentState())
-            elif event.lookahead == '/':
-                return SkipState(CommentState())
+            lookahead = event.lookahead(1)
 
+            if lookahead == '*':
+                return SkipState(MultilineCommentState())
+            elif lookahead == '/':
+                return SkipState(CommentState())
+        elif event.character_met == 'p':
+            lookahead = event.lookahead(8)
+
+            if lookahead == 'rotected' or \
+                    lookahead[:6] == 'rivate' or \
+                    lookahead[:5] == 'ublic':
+                return AccessModifierState()
+        elif event.character_met.isalpha():
+            return NameState()
         return self
 
 
 class CommentState(State):
 
-    def on_event(self, event: Event) -> State:
+    def on_event(self, event: CharacterEvent) -> State:
         if event.character_met == '\n':
             return InitialState()
 
@@ -45,9 +59,9 @@ class CommentState(State):
 
 class MultilineCommentState(State):
 
-    def on_event(self, event: Event) -> State:
+    def on_event(self, event: CharacterEvent) -> State:
         if event.character_met == '*':
-            if event.lookahead == '/':
+            if event.lookahead(1) == '/':
                 return SkipState(InitialState())
             else:
                 return JavadocState()
@@ -57,9 +71,27 @@ class MultilineCommentState(State):
 
 class JavadocState(State):
 
-    def on_event(self, event: Event) -> State:
-        if event.character_met == '*' and event.lookahead == '/':
+    def on_event(self, event: CharacterEvent) -> State:
+        if event.character_met == '*' and event.lookahead(1) == '/':
             return SkipState(InitialState())
+
+        return self
+
+
+class AccessModifierState(State):
+
+    def on_event(self, event: CharacterEvent) -> State:
+        if event.character_met.isspace():
+            return InitialState()
+
+        return self
+
+
+class NameState(State):
+
+    def on_event(self, event: CharacterEvent) -> State:
+        if event.character_met.isspace():
+            return InitialState()
 
         return self
 
@@ -70,7 +102,7 @@ class SkipState(State):
         self.count = skip_count
         self.next_state = next_state
 
-    def on_event(self, event: Event) -> State:
+    def on_event(self, event: CharacterEvent) -> State:
         if self.count > 1:
             self.count -= 1
             return self

@@ -57,8 +57,7 @@ class SourceFile:
 
     def lines(self):
         with open(self.file_path, 'r') as file:
-            for line in file:
-                yield line
+            return file.readlines()
 
     def __repr__(self) -> str:
         return 'SourceFile[' + self.file_path + ']'
@@ -88,5 +87,5 @@ class ClassSignature(Signature):
 
 class MethodSignature(Signature):
 
-    def __init__(self, annotations, access_modifier, return_type: str, name):
+    def __init__(self, annotations, access_modifier, return_type, name):
         super().__init__(annotations, access_modifier, name)

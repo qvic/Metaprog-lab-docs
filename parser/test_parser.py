@@ -35,7 +35,8 @@ class TestParser(TestCase):
 
         expected_tree = FileTreeNode('a', [],
                                      [FileTreeNode('b', [SourceFile('a/b/f1.java')],
-                                                   [FileTreeNode('c', [SourceFile('a/b/c/f2.java'), SourceFile('a/b/c/f3.java')], []),
+                                                   [FileTreeNode('c', [SourceFile('a/b/c/f2.java'),
+                                                                       SourceFile('a/b/c/f3.java')], []),
                                                     FileTreeNode('d', [SourceFile('a/b/d/f4.java')], [])])])
 
         self.assertEqual(tree, expected_tree)

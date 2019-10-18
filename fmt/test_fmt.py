@@ -1,8 +1,8 @@
 from unittest import TestCase
-from itertools import zip_longest
 
 from fmt.fmt import FiniteStateMachine
-from fmt.states import Event, MultilineCommentState, InitialState, CommentState, JavadocState, SkipState
+from fmt.states import CharacterEvent, MultilineCommentState, InitialState, JavadocState, SkipState, \
+    AccessModifierState
 
 
 class TestStates(TestCase):
@@ -14,22 +14,21 @@ class TestStates(TestCase):
         self.fmt.state = InitialState()
         test_string = 'abc'
 
-        for char, lookahead in zip_longest(test_string, test_string[1:]):
-            event = Event(char, lookahead)
-            self.fmt.on_event(event)
+        for index, char in enumerate(test_string):
+            event = CharacterEvent(index, test_string)
+            self.fmt.step(event)
             self.assertTrue(isinstance(self.fmt.state, InitialState))
 
     def test_MultilineCommentState(self):
         self.fmt.state = InitialState()
         test_string = '''/*xxx*/\n///*yyy*/'''
 
-        for char, lookahead in zip_longest(test_string, test_string[1:]):
+        for index, char in enumerate(test_string):
             print('from ', self.fmt.state)
-
-            event = Event(char, lookahead)
+            event = CharacterEvent(index, test_string)
             print('by', event)
             previous_state = self.fmt.state
-            self.fmt.on_event(event)
+            self.fmt.step(event)
             print('to ', self.fmt.state, '\n')
 
             if isinstance(self.fmt.state, MultilineCommentState) and isinstance(previous_state, MultilineCommentState):
@@ -43,17 +42,16 @@ class TestStates(TestCase):
         test_string = '''/*xxx
         xxx
         */ /**yyyyy
-        yyyyy*/
+        yyyyy*//*xx*/
         ///**/
         // /**qwerty*/'''
 
-        for char, lookahead in zip_longest(test_string, test_string[1:]):
+        for index, char in enumerate(test_string):
             print('from ', self.fmt.state)
-
-            event = Event(char, lookahead)
+            event = CharacterEvent(index, test_string)
             print('by', event)
             previous_state = self.fmt.state
-            self.fmt.on_event(event)
+            self.fmt.step(event)
             print('to ', self.fmt.state, '\n')
 
             if isinstance(self.fmt.state, MultilineCommentState) and isinstance(previous_state, MultilineCommentState):
@@ -61,22 +59,36 @@ class TestStates(TestCase):
             elif isinstance(self.fmt.state, JavadocState) and isinstance(previous_state, JavadocState):
                 self.assertIn(char, 'y\n ')
 
+    def test_AccessModifierState(self):
+        self.fmt.state = InitialState()
+        test_string = 'private\n class protected \nunprotected  void public int'
+
+        modifiers = ''
+        for index, char in enumerate(test_string):
+            event = CharacterEvent(index, test_string)
+            self.fmt.step(event)
+
+            if isinstance(self.fmt.state, AccessModifierState):
+                modifiers += char
+
+        self.assertEqual(modifiers, 'privateprotectedpublic')
+
     def test_SkipState(self):
-        event = Event(None, None)
+        event = CharacterEvent(0, ' ')
         self.fmt.state = SkipState(InitialState())
 
         self.assertTrue(isinstance(self.fmt.state, SkipState))
-        self.fmt.on_event(event)
+        self.fmt.step(event)
         self.assertTrue(isinstance(self.fmt.state, InitialState))
 
     def test_SkipState_skip_count(self):
-        event = Event(None, None)
+        event = CharacterEvent(0, ' ')
         n = 5
         self.fmt.state = SkipState(InitialState(), skip_count=n)
 
         for i in range(n):
             self.assertTrue(isinstance(self.fmt.state, SkipState))
-            self.fmt.on_event(event)
+            self.fmt.step(event)
         self.assertTrue(isinstance(self.fmt.state, InitialState))
 
 

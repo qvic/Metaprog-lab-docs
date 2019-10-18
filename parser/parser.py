@@ -3,6 +3,8 @@ import re
 from collections import deque
 from typing import List
 
+from fmt.fmt import FiniteStateMachine
+from fmt.states import InitialState
 from util.util import FileTreeNode, SourceFile, Helpers
 
 
@@ -40,30 +42,5 @@ class Parser:
         return root_node
 
     @staticmethod
-    def _search_for_comments(source_file: SourceFile):
-        current_doc = ''
-        signature = ''
-        in_doc = False
-        in_signature = False
-
-        for line in source_file.lines():
-            line = line.strip()
-
-            if line.startswith('/**'):
-                in_doc = True
-            elif in_doc and line.startswith('*/'):
-                in_doc = False
-                # yield current_doc
-                # current_doc = ''
-                in_signature = True
-            elif in_signature:
-                m = re.split(r'[{;]', line)
-                if m is not None:
-                    in_signature = False
-                    yield (current_doc, signature + m[0].strip())
-                    current_doc = ''
-                    signature = ''
-                else:
-                    signature += line
-            elif in_doc:
-                current_doc += line + '\n'
+    def parse_docs(file_content):
+        fmt = FiniteStateMachine(InitialState())
