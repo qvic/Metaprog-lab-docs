@@ -5,7 +5,8 @@ from abc import ABC, abstractmethod
 class CharacterEvent:
 
     def __init__(self, character_index: int, file_contents: str):
-        self.character_met: str = file_contents[character_index]
+        self.eof = character_index >= len(file_contents)
+        self.character_met = '' if self.eof else file_contents[character_index]
         self._lookahead = itertools.islice(file_contents, character_index + 1, len(file_contents))
 
     def __repr__(self) -> str:
@@ -19,8 +20,12 @@ class CharacterEvent:
 class State(ABC):
 
     @abstractmethod
-    def on_event(self, event: CharacterEvent):
+    def on_event(self, event: CharacterEvent) -> 'State':
         pass
+
+    @property
+    def type(self) -> str:
+        return self.__class__.__name__
 
     def __repr__(self) -> str:
         return self.__class__.__name__
@@ -30,11 +35,14 @@ class InitialState(State):
 
     def on_event(self, event: CharacterEvent) -> State:
         if event.character_met == '/':
-            lookahead = event.lookahead(1)
+            lookahead = event.lookahead(2)
 
-            if lookahead == '*':
-                return SkipState(MultilineCommentState())
-            elif lookahead == '/':
+            if lookahead[0] == '*':
+                if lookahead[1] == '*':
+                    return SkipState(JavadocState(), skip_count=2)
+                else:
+                    return SkipState(MultilineCommentState())
+            elif lookahead[0] == '/':
                 return SkipState(CommentState())
         elif event.character_met == 'p':
             lookahead = event.lookahead(8)
@@ -62,7 +70,7 @@ class MultilineCommentState(State):
     def on_event(self, event: CharacterEvent) -> State:
         if event.character_met == '*':
             if event.lookahead(1) == '/':
-                return SkipState(InitialState())
+                return SkipState(InitialState(), skip_count=2, pretend=self.type)
             else:
                 return JavadocState()
 
@@ -73,7 +81,7 @@ class JavadocState(State):
 
     def on_event(self, event: CharacterEvent) -> State:
         if event.character_met == '*' and event.lookahead(1) == '/':
-            return SkipState(InitialState())
+            return SkipState(InitialState(), activate=True, skip_count=2, pretend=self.type)
 
         return self
 
@@ -98,13 +106,22 @@ class NameState(State):
 
 class SkipState(State):
 
-    def __init__(self, next_state: State, skip_count=1):
+    def __init__(self, next_state: State, activate=False, skip_count=1, pretend=None):
         self.count = skip_count
         self.next_state = next_state
+        self._activate_next_state = activate
+        self._type = next_state.type if not pretend else pretend
 
     def on_event(self, event: CharacterEvent) -> State:
         if self.count > 1:
             self.count -= 1
             return self
 
+        if self._activate_next_state:
+            return self.next_state.on_event(event)
+
         return self.next_state
+
+    @property
+    def type(self) -> str:
+        return self._type
