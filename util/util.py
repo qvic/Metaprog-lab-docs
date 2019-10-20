@@ -71,21 +71,18 @@ class SourceFile:
         return hash(self.file_path)
 
 
-class Signature:
+class DocumentedClass:
 
-    def __init__(self, annotations: List, access_modifier: str, name: str):
-        self.annotations = annotations
-        self.access_modifier = access_modifier
-        self.name = []
+    def __init__(self):
+        self.extends_list = []
+        self.name = None
+        self.access_modifier = None
+        self.annotations = []
+        self.docs = None
 
+    def __repr__(self) -> str:
+        return '{}({})'.format(type(self).__name__, ', '.join('%s=%s' % item for item in vars(self).items()))
 
-class ClassSignature(Signature):
-
-    def __init__(self, annotations, access_modifier, name, extends_list):
-        super().__init__(annotations, access_modifier, name)
-
-
-class MethodSignature(Signature):
-
-    def __init__(self, annotations, access_modifier, return_type, name):
-        super().__init__(annotations, access_modifier, name)
+# class MethodSignature:
+#
+#     def __init__(self, annotations, access_modifier, return_type, name):

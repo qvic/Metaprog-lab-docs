@@ -10,8 +10,8 @@ class TestParser(TestCase):
     def setUp(self):
         self.parser = Parser()
 
-    def test_list_files_hierarchy(self):
-        print(self.parser._list_files_hierarchy("testdata"))
+    # def test_list_files_hierarchy(self):
+    #     print(self.parser._list_files_hierarchy("testdata"))
 
     def test_generate_tree_from_list(self):
         """
@@ -41,3 +41,26 @@ class TestParser(TestCase):
                                                     FileTreeNode('d', [SourceFile('a/b/d/f4.java')], [])])])
 
         self.assertEqual(tree, expected_tree)
+
+    def test_parse_docs(self):
+        test_string = '''/**
+ * The result of applying a {@link Filter}.
+ *
+ * @since 1.0
+ */
+@Component
+@LMAO
+@API(status = STABLE, since = "1.0")
+public class FilterResult {
+
+    /**
+     * Factory for creating <em>included</em> results.
+     *
+     * @param reason the reason why the filtered object was included
+     * @return an included {@code FilterResult} with the given reason
+     */
+    public static FilterResult included(String reason) {
+        return new FilterResult(true, reason);
+    }
+}'''
+        Parser.parse_docs(test_string)

@@ -1,19 +1,6 @@
-import itertools
 from abc import ABC, abstractmethod
 
-
-class CharacterEvent:
-
-    def __init__(self, character_index: int, file_contents: str):
-        self.eof = character_index >= len(file_contents)
-        self.character_met = '' if self.eof else file_contents[character_index]
-        self._lookahead = itertools.islice(file_contents, character_index + 1, len(file_contents))
-
-    def __repr__(self) -> str:
-        return 'CharacterEvent[{0}]'.format(repr(self.character_met))
-
-    def lookahead(self, n):
-        return ''.join(itertools.islice(self._lookahead, n))
+from fmt.util import CharacterEvent
 
 
 # todo metaclass singleton
@@ -31,6 +18,15 @@ class State(ABC):
         return self.__class__.__name__
 
 
+class WhitespaceState(State):
+
+    def on_event(self, event: CharacterEvent) -> State:
+        if event.character_met.isspace():
+            return self
+
+        return InitialState().on_event(event)
+
+
 class InitialState(State):
 
     def on_event(self, event: CharacterEvent) -> State:
@@ -44,15 +40,25 @@ class InitialState(State):
                     return SkipState(MultilineCommentState())
             elif lookahead[0] == '/':
                 return SkipState(CommentState())
-        elif event.character_met == 'p':
-            lookahead = event.lookahead(8)
-
-            if lookahead == 'rotected' or \
-                    lookahead[:6] == 'rivate' or \
-                    lookahead[:5] == 'ublic':
-                return AccessModifierState()
-        elif event.character_met.isalpha():
+        elif event.character_met == '{':
+            return SkipState(InitialState(), activate=True, pretend='OpenBracketState')
+        elif event.character_met == '}':
+            return SkipState(InitialState(), activate=True, pretend='ClosedBracketState')
+        elif event.character_met == '@':
+            return AnnotationState()
+        elif event.is_start_of('class'):
+            return SkipState(InitialState(), activate=True, skip_count=5, pretend='IdentifierState')
+        elif event.is_start_of('protected'):
+            return SkipState(InitialState(), activate=True, skip_count=9, pretend='AccessModifierState')
+        elif event.is_start_of('private'):
+            return SkipState(InitialState(), activate=True, skip_count=7, pretend='AccessModifierState')
+        elif event.is_start_of('public'):
+            return SkipState(InitialState(), activate=True, skip_count=6, pretend='AccessModifierState')
+        elif event.character_met.isidentifier():
             return NameState()
+        elif event.character_met.isspace():
+            return WhitespaceState()
+
         return self
 
 
@@ -68,11 +74,8 @@ class CommentState(State):
 class MultilineCommentState(State):
 
     def on_event(self, event: CharacterEvent) -> State:
-        if event.character_met == '*':
-            if event.lookahead(1) == '/':
-                return SkipState(InitialState(), skip_count=2, pretend=self.type)
-            else:
-                return JavadocState()
+        if event.character_met == '*' and event.lookahead(1) == '/':
+            return SkipState(InitialState(), activate=True, skip_count=2, pretend=self.type)
 
         return self
 
@@ -86,22 +89,38 @@ class JavadocState(State):
         return self
 
 
-class AccessModifierState(State):
-
-    def on_event(self, event: CharacterEvent) -> State:
-        if event.character_met.isspace():
-            return InitialState()
-
-        return self
-
-
 class NameState(State):
 
     def on_event(self, event: CharacterEvent) -> State:
-        if event.character_met.isspace():
-            return InitialState()
+        if event.character_met.isidentifier():
+            return self
+
+        return InitialState().on_event(event)
+
+
+class AnnotationState(State):
+
+    def on_event(self, event: CharacterEvent) -> State:
+        if event.character_met.isalpha():
+            return self
+
+        if event.character_met == '(':
+            return AnnotationBracketsState()
+
+        return InitialState()
+
+
+class AnnotationBracketsState(State):
+
+    def on_event(self, event: CharacterEvent) -> State:
+        if event.character_met == ')':
+            return SkipState(InitialState(), activate=True, pretend=self.type)
 
         return self
+
+    @property
+    def type(self) -> str:
+        return AnnotationState.__name__
 
 
 class SkipState(State):

@@ -8,11 +8,11 @@ class FiniteStateMachine:
         self.partition = []
         self._current_series = []
 
-    def process_string(self, string: str):
+    def process_string(self, string: str, end=True):
         for index, char in enumerate(string):
             self.step(CharacterEvent(index, string))
-        self.step(CharacterEvent(len(string), string))
-        return self.partition
+        if end:
+            self.step(CharacterEvent(len(string), string))
 
     def step(self, event: CharacterEvent):
         _previous_state = self.state
@@ -23,3 +23,7 @@ class FiniteStateMachine:
             self._current_series = []
 
         self._current_series.append(event.character_met)
+
+    @property
+    def string_partition(self):
+        return [(state_type, ''.join(string_value)) for state_type, string_value in self.partition]
