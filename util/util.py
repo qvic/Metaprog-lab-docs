@@ -10,6 +10,12 @@ class Helpers:
         return os.path.splitext(file_path)[1]
 
 
+class Representable:
+
+    def __repr__(self) -> str:
+        return '{}[{}]'.format(type(self).__name__, ', '.join('%s=%s' % item for item in vars(self).items()))
+
+
 class FileTreeNode:
 
     def __init__(self, directory: str, files: List, children: List = None):
@@ -50,7 +56,7 @@ class FileTreeNode:
         return result
 
 
-class SourceFile:
+class SourceFile(Representable):
 
     def __init__(self, file_path: str):
         self.file_path = file_path
@@ -58,9 +64,6 @@ class SourceFile:
     def lines(self):
         with open(self.file_path, 'r') as file:
             return file.readlines()
-
-    def __repr__(self) -> str:
-        return 'SourceFile[' + self.file_path + ']'
 
     def __eq__(self, o: object) -> bool:
         if isinstance(o, SourceFile):
@@ -71,18 +74,59 @@ class SourceFile:
         return hash(self.file_path)
 
 
-class DocumentedClass:
+class DocumentedClass(Representable):
 
     def __init__(self):
-        self.extends_list = []
-        self.name = None
-        self.access_modifier = None
-        self.annotations = []
+        # todo static and final
         self.docs = None
+        self.annotations = []
+        self.access_modifier = None
+        self.name = None
+        self.extends = None
+        self.implements_list = []
+        self.contents = []
 
-    def __repr__(self) -> str:
-        return '{}({})'.format(type(self).__name__, ', '.join('%s=%s' % item for item in vars(self).items()))
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
 
-# class MethodSignature:
-#
-#     def __init__(self, annotations, access_modifier, return_type, name):
+    @staticmethod
+    def create(docs, annotations, access_modifier, name, extends, implements_list, contents):
+        self = DocumentedClass()
+        self.docs = docs
+        self.annotations = annotations
+        self.access_modifier = access_modifier
+        self.name = name
+        self.extends = extends
+        self.implements_list = implements_list
+        self.contents = contents
+        return self
+
+
+class MethodSignature(Representable):
+
+    def __init__(self):
+        # todo static and final
+        self.docs = None
+        self.annotations = []
+        self.access_modifier = None
+        self.return_type = None
+        self.name = None
+        self.args = []
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
+    @staticmethod
+    def create(docs, annotations, access_modifier, return_type, name, args):
+        self = MethodSignature()
+        self.docs = docs
+        self.annotations = annotations
+        self.access_modifier = access_modifier
+        self.return_type = return_type
+        self.name = name
+        self.args = args
+        return self

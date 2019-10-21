@@ -95,7 +95,7 @@ class TestStates(TestCase):
 
     def test_SkipState_skip_count(self):
         n = 5
-        self.fmt = FiniteStateMachine(SkipState(InitialState(), skip_count=n, pretend='CommentState'))
+        self.fmt = FiniteStateMachine(SkipState(InitialState(), skip_count=n, as_state='CommentState'))
         event = CharacterEvent(0, ' ')
 
         for i in range(n):

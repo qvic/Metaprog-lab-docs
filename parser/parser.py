@@ -47,27 +47,60 @@ class Parser:
         fmt = FiniteStateMachine(InitialState())
         fmt.process_string(file_contents)
         partition = Parser._remove_whitespaces(fmt.string_partition)
-
+        pprint(partition)
+        classes = []
+        stack = deque()
         for i, (state_type, string_value) in enumerate(partition):
             if state_type == 'IdentifierState' and string_value == 'class':
-                print(Parser._detect_class(partition, i))
+                classes.append(Parser._detect_class(partition, i))
+            elif state_type == 'OpenBracketState':
+                stack.append(classes[-1])
+            elif state_type == 'ClosedBracketState':
+                stack.pop()
+        # todo detect methods
+
+        return classes
 
     @staticmethod
     def _remove_whitespaces(partition):
         return [item for item in partition if item[0] != 'WhitespaceState' and item[0] != 'InitialState']
 
     @staticmethod
-    def _detect_class(partition, i):
+    def _detect_class(partition, class_token_index):
         cls = DocumentedClass()
+        i = class_token_index
 
         if partition[i + 1][0] == 'NameState':
             cls.name = partition[i + 1][1]
         else:
-            i += 1
+            raise Exception('Class has no name')
+
+        if partition[i + 2][0] == 'IdentifierState' and partition[i + 2][1] == 'extends':
+            if partition[i + 3][0] == 'NameState':
+                cls.extends = partition[i + 3][1]
+            else:
+                raise Exception('Class extends nothing')
+        else:
+            i -= 2
+
+        if partition[i + 4][0] == 'IdentifierState' and partition[i + 4][1] == 'implements':
+            if partition[i + 5][0] != 'NameState':
+                raise Exception('Class implements nothing')
+
+            k = 0
+            while partition[i + 5 + k][0] == 'NameState':
+                cls.implements_list.append(partition[i + 5 + k][1])
+                if partition[i + 6 + k][0] == 'DelimiterState' and partition[i + 6 + k][1] == ',':
+                    k += 2
+                else:
+                    break
+
+        i = class_token_index
 
         if partition[i - 1][0] == 'AccessModifierState':
             cls.access_modifier = partition[i - 1][1]
         else:
+            cls.access_modifier = 'package-private'
             i += 1
 
         while partition[i - 2][0] == 'AnnotationState':

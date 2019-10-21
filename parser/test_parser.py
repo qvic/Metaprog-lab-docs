@@ -2,7 +2,7 @@ from pprint import pprint
 from unittest import TestCase
 
 from parser.parser import Parser
-from util.util import FileTreeNode, SourceFile
+from util.util import FileTreeNode, SourceFile, DocumentedClass, MethodSignature
 
 
 class TestParser(TestCase):
@@ -42,6 +42,99 @@ class TestParser(TestCase):
 
         self.assertEqual(tree, expected_tree)
 
+    def test_parse_docs_for_class_with_all_elements(self):
+        test_string = '''/**
+ * The result of applying a {@link Filter}.
+ *
+ * @since 1.0
+ */
+@Component
+@API(status = STABLE, since = "1.0")
+public class FilterResult extends AbstractFilterResult implements Result, Serializable {}'''
+
+        classes = Parser.parse_docs(test_string)
+
+        self.assertEqual(
+            DocumentedClass.create('''/**
+ * The result of applying a {@link Filter}.
+ *
+ * @since 1.0
+ */''', ['@API(status = STABLE, since = "1.0")', '@Component'], 'public', 'FilterResult',
+                                   'AbstractFilterResult', ['Result', 'Serializable'],
+                                   []),
+            classes[0])
+
+    def test_parse_docs_for_class_without_extends(self):
+        test_string = '''/**
+ * The result of applying a {@link Filter}.
+ *
+ * @since 1.0
+ */
+@Component
+@API(status = STABLE, since = "1.0")
+public class FilterResult implements Result, Serializable {}'''
+
+        classes = Parser.parse_docs(test_string)
+
+        self.assertEqual(
+            DocumentedClass.create('''/**
+ * The result of applying a {@link Filter}.
+ *
+ * @since 1.0
+ */''', ['@API(status = STABLE, since = "1.0")', '@Component'], 'public', 'FilterResult',
+                                   None, ['Result', 'Serializable'],
+                                   []),
+            classes[0])
+
+    def test_parse_docs_for_class_without_implements(self):
+        test_string = '''/**
+ * The result of applying a {@link Filter}.
+ *
+ * @since 1.0
+ */
+@Component
+@API(status = STABLE, since = "1.0")
+public class FilterResult extends AbstractFilterResult {}'''
+
+        classes = Parser.parse_docs(test_string)
+
+        self.assertEqual(
+            DocumentedClass.create('''/**
+ * The result of applying a {@link Filter}.
+ *
+ * @since 1.0
+ */''', ['@API(status = STABLE, since = "1.0")', '@Component'], 'public', 'FilterResult',
+                                   'AbstractFilterResult', [],
+                                   []),
+            classes[0])
+
+    def test_parse_docs_for_class_without_annotations(self):
+        test_string = '''/**
+ * The result of applying a {@link Filter}.
+ *
+ * @since 1.0
+ */
+public class FilterResult extends AbstractFilterResult implements Result, Serializable {}'''
+
+        classes = Parser.parse_docs(test_string)
+
+        self.assertEqual(
+            DocumentedClass.create('''/**
+ * The result of applying a {@link Filter}.
+ *
+ * @since 1.0
+ */''', [], 'public', 'FilterResult', 'AbstractFilterResult', ['Result', 'Serializable'], []),
+            classes[0])
+
+    def test_parse_docs_for_class_without_javadoc(self):
+        test_string = '''@Component public class FilterResult extends AbstractFilterResult implements Result, Serializable {}'''
+
+        classes = Parser.parse_docs(test_string)
+
+        self.assertEqual(
+            DocumentedClass.create(None, ['@Component'], 'public', 'FilterResult', 'AbstractFilterResult', ['Result', 'Serializable'], []),
+            classes[0])
+
     def test_parse_docs(self):
         test_string = '''/**
  * The result of applying a {@link Filter}.
@@ -49,9 +142,8 @@ class TestParser(TestCase):
  * @since 1.0
  */
 @Component
-@LMAO
 @API(status = STABLE, since = "1.0")
-public class FilterResult {
+public class FilterResult extends AbstractFilterResult implements Result, Serializable {
 
     /**
      * Factory for creating <em>included</em> results.
@@ -59,8 +151,30 @@ public class FilterResult {
      * @param reason the reason why the filtered object was included
      * @return an included {@code FilterResult} with the given reason
      */
-    public static FilterResult included(String reason) {
+    public FilterResult included(String reason) {
         return new FilterResult(true, reason);
     }
+    
+    @Override
+    public String toString() {
+        return this.name;
+    }
 }'''
-        Parser.parse_docs(test_string)
+        classes = Parser.parse_docs(test_string)
+        pprint(classes, compact=True)
+
+#        self.assertIn(
+#            DocumentedClass.create('''/**
+# * The result of applying a {@link Filter}.
+# *
+# * @since 1.0
+# */''', ['@Component', '@API(status = STABLE, since = "1.0")'], 'public', 'FilterResult',
+#                                   'AbstractFilterResult', ['Result'],
+#                                   [MethodSignature.create('''/**
+#     * Factory for creating <em>included</em> results.
+#     *
+#     * @param reason the reason why the filtered object was included
+#     * @return an included {@code FilterResult} with the given reason
+#     */''', [], 'public', 'FilterResult', 'included', [('String', 'reason')]),
+#                                    MethodSignature.create('', ['@Override'], 'public', 'String', 'toString', [])]),
+#            classes)

@@ -40,20 +40,34 @@ class InitialState(State):
                     return SkipState(MultilineCommentState())
             elif lookahead[0] == '/':
                 return SkipState(CommentState())
+        elif event.character_met == ',':
+            return SkipState(InitialState(), activate=True, as_state='DelimiterState')
         elif event.character_met == '{':
-            return SkipState(InitialState(), activate=True, pretend='OpenBracketState')
+            return SkipState(InitialState(), activate=True, as_state='OpenBracketState')
         elif event.character_met == '}':
-            return SkipState(InitialState(), activate=True, pretend='ClosedBracketState')
+            return SkipState(InitialState(), activate=True, as_state='ClosedBracketState')
+        elif event.character_met == '(':
+            return SkipState(InitialState(), activate=True, as_state='OpenParenthesisState')
+        elif event.character_met == ')':
+            return SkipState(InitialState(), activate=True, as_state='ClosedParenthesisState')
         elif event.character_met == '@':
             return AnnotationState()
         elif event.is_start_of('class'):
-            return SkipState(InitialState(), activate=True, skip_count=5, pretend='IdentifierState')
+            return SkipState(InitialState(), activate=True, skip_count=5, as_state='IdentifierState')
+        elif event.is_start_of('static'):
+            return SkipState(InitialState(), activate=True, skip_count=6, as_state='ModifierState')
+        elif event.is_start_of('final'):
+            return SkipState(InitialState(), activate=True, skip_count=5, as_state='ModifierState')
+        elif event.is_start_of('extends'):
+            return SkipState(InitialState(), activate=True, skip_count=7, as_state='IdentifierState')
+        elif event.is_start_of('implements'):
+            return SkipState(InitialState(), activate=True, skip_count=10, as_state='IdentifierState')
         elif event.is_start_of('protected'):
-            return SkipState(InitialState(), activate=True, skip_count=9, pretend='AccessModifierState')
+            return SkipState(InitialState(), activate=True, skip_count=9, as_state='AccessModifierState')
         elif event.is_start_of('private'):
-            return SkipState(InitialState(), activate=True, skip_count=7, pretend='AccessModifierState')
+            return SkipState(InitialState(), activate=True, skip_count=7, as_state='AccessModifierState')
         elif event.is_start_of('public'):
-            return SkipState(InitialState(), activate=True, skip_count=6, pretend='AccessModifierState')
+            return SkipState(InitialState(), activate=True, skip_count=6, as_state='AccessModifierState')
         elif event.character_met.isidentifier():
             return NameState()
         elif event.character_met.isspace():
@@ -75,7 +89,7 @@ class MultilineCommentState(State):
 
     def on_event(self, event: CharacterEvent) -> State:
         if event.character_met == '*' and event.lookahead(1) == '/':
-            return SkipState(InitialState(), activate=True, skip_count=2, pretend=self.type)
+            return SkipState(InitialState(), activate=True, skip_count=2, as_state=self.type)
 
         return self
 
@@ -84,7 +98,7 @@ class JavadocState(State):
 
     def on_event(self, event: CharacterEvent) -> State:
         if event.character_met == '*' and event.lookahead(1) == '/':
-            return SkipState(InitialState(), activate=True, skip_count=2, pretend=self.type)
+            return SkipState(InitialState(), activate=True, skip_count=2, as_state=self.type)
 
         return self
 
@@ -114,7 +128,7 @@ class AnnotationBracketsState(State):
 
     def on_event(self, event: CharacterEvent) -> State:
         if event.character_met == ')':
-            return SkipState(InitialState(), activate=True, pretend=self.type)
+            return SkipState(InitialState(), activate=True, as_state=self.type)
 
         return self
 
@@ -125,11 +139,11 @@ class AnnotationBracketsState(State):
 
 class SkipState(State):
 
-    def __init__(self, next_state: State, activate=False, skip_count=1, pretend=None):
+    def __init__(self, next_state: State, activate=False, skip_count=1, as_state=None):
         self.count = skip_count
         self.next_state = next_state
         self._activate_next_state = activate
-        self._type = next_state.type if not pretend else pretend
+        self._type = next_state.type if not as_state else as_state
 
     def on_event(self, event: CharacterEvent) -> State:
         if self.count > 1:
