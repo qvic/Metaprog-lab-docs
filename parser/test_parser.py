@@ -2,7 +2,7 @@ from pprint import pprint
 from unittest import TestCase
 
 from parser.parser import Parser
-from util.util import FileTreeNode, SourceFile, DocumentedClass, MethodSignature
+from util.util import FileTreeNode, SourceFile, DocumentedClass, DocumentedMethod
 
 
 class TestParser(TestCase):
@@ -61,7 +61,7 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
  * @since 1.0
  */''', ['@API(status = STABLE, since = "1.0")', '@Component'], 'public', 'FilterResult',
                                    'AbstractFilterResult', ['Result', 'Serializable'],
-                                   []),
+                                   [], []),
             classes[0])
 
     def test_parse_docs_for_class_without_extends(self):
@@ -83,7 +83,7 @@ public class FilterResult implements Result, Serializable {}'''
  * @since 1.0
  */''', ['@API(status = STABLE, since = "1.0")', '@Component'], 'public', 'FilterResult',
                                    None, ['Result', 'Serializable'],
-                                   []),
+                                   [], []),
             classes[0])
 
     def test_parse_docs_for_class_without_implements(self):
@@ -105,7 +105,7 @@ public class FilterResult extends AbstractFilterResult {}'''
  * @since 1.0
  */''', ['@API(status = STABLE, since = "1.0")', '@Component'], 'public', 'FilterResult',
                                    'AbstractFilterResult', [],
-                                   []),
+                                   [], []),
             classes[0])
 
     def test_parse_docs_for_class_without_annotations(self):
@@ -123,7 +123,7 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
  * The result of applying a {@link Filter}.
  *
  * @since 1.0
- */''', [], 'public', 'FilterResult', 'AbstractFilterResult', ['Result', 'Serializable'], []),
+ */''', [], 'public', 'FilterResult', 'AbstractFilterResult', ['Result', 'Serializable'], [], []),
             classes[0])
 
     def test_parse_docs_for_class_without_javadoc(self):
@@ -132,7 +132,8 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
         classes = Parser.parse_docs(test_string)
 
         self.assertEqual(
-            DocumentedClass.create(None, ['@Component'], 'public', 'FilterResult', 'AbstractFilterResult', ['Result', 'Serializable'], []),
+            DocumentedClass.create(None, ['@Component'], 'public', 'FilterResult', 'AbstractFilterResult',
+                                   ['Result', 'Serializable'], [], []),
             classes[0])
 
     def test_parse_docs(self):
@@ -155,26 +156,39 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
         return new FilterResult(true, reason);
     }
     
+    class InnerClass {
+        
+        public void innerClassMethod() {}
+    }
+    
+    /**
+     * Overriding toString
+     */
     @Override
     public String toString() {
         return this.name;
     }
 }'''
         classes = Parser.parse_docs(test_string)
-        pprint(classes, compact=True)
 
-#        self.assertIn(
-#            DocumentedClass.create('''/**
-# * The result of applying a {@link Filter}.
-# *
-# * @since 1.0
-# */''', ['@Component', '@API(status = STABLE, since = "1.0")'], 'public', 'FilterResult',
-#                                   'AbstractFilterResult', ['Result'],
-#                                   [MethodSignature.create('''/**
-#     * Factory for creating <em>included</em> results.
-#     *
-#     * @param reason the reason why the filtered object was included
-#     * @return an included {@code FilterResult} with the given reason
-#     */''', [], 'public', 'FilterResult', 'included', [('String', 'reason')]),
-#                                    MethodSignature.create('', ['@Override'], 'public', 'String', 'toString', [])]),
-#            classes)
+        self.assertEqual(
+            DocumentedClass.create('''/**
+ * The result of applying a {@link Filter}.
+ *
+ * @since 1.0
+ */''', ['@API(status = STABLE, since = "1.0")', '@Component'], 'public', 'FilterResult',
+                                   'AbstractFilterResult', ['Result', 'Serializable'],
+                                   [DocumentedMethod.create('''/**
+     * Factory for creating <em>included</em> results.
+     *
+     * @param reason the reason why the filtered object was included
+     * @return an included {@code FilterResult} with the given reason
+     */''', [], 'public', 'FilterResult', 'included', [['String', 'reason']]),
+                                    DocumentedMethod.create('''/**
+     * Overriding toString
+     */''', ['@Override'], 'public', 'String', 'toString', [])],
+                                   [DocumentedClass.create(None, [], 'package-private', 'InnerClass', None, [], [
+                                       DocumentedMethod.create(None, [], 'public', 'void',
+                                                               'innerClassMethod', [])],
+                                                           [])]),
+            classes[0])

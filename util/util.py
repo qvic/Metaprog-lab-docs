@@ -84,7 +84,8 @@ class DocumentedClass(Representable):
         self.name = None
         self.extends = None
         self.implements_list = []
-        self.contents = []
+        self.methods = []
+        self.inner_classes = []
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -92,7 +93,7 @@ class DocumentedClass(Representable):
         return False
 
     @staticmethod
-    def create(docs, annotations, access_modifier, name, extends, implements_list, contents):
+    def create(docs, annotations, access_modifier, name, extends, implements_list, methods, inner_classes):
         self = DocumentedClass()
         self.docs = docs
         self.annotations = annotations
@@ -100,11 +101,12 @@ class DocumentedClass(Representable):
         self.name = name
         self.extends = extends
         self.implements_list = implements_list
-        self.contents = contents
+        self.inner_classes = inner_classes
+        self.methods = methods
         return self
 
 
-class MethodSignature(Representable):
+class DocumentedMethod(Representable):
 
     def __init__(self):
         # todo static and final
@@ -122,7 +124,7 @@ class MethodSignature(Representable):
 
     @staticmethod
     def create(docs, annotations, access_modifier, return_type, name, args):
-        self = MethodSignature()
+        self = DocumentedMethod()
         self.docs = docs
         self.annotations = annotations
         self.access_modifier = access_modifier

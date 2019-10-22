@@ -109,7 +109,19 @@ class NameState(State):
         if event.character_met.isidentifier():
             return self
 
+        if event.character_met == '(':
+            return ArgumentsParenthesisState()
+
         return InitialState().on_event(event)
+
+
+class ArgumentsParenthesisState(State):
+
+    def on_event(self, event: CharacterEvent) -> State:
+        if event.character_met == ')':
+            return SkipState(InitialState(), activate=True, as_state=self.type)
+
+        return self
 
 
 class AnnotationState(State):
