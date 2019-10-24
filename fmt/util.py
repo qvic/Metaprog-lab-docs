@@ -1,5 +1,7 @@
 import itertools
 
+from util.util import Representable
+
 
 class CharacterEvent:
 
@@ -18,3 +20,52 @@ class CharacterEvent:
 
     def is_start_of(self, string: str) -> bool:
         return string == self.character_met + self._lookahead[:len(string) - 1]
+
+
+class Token(Representable):
+
+    def __init__(self, state, value):
+        self.value = value
+        self.state = state
+
+    def __eq__(self, other: object) -> bool:
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
+
+class Partition(Representable):
+
+    def __init__(self, partition_list=None):
+        if partition_list is None:
+            partition_list = []
+
+        self.sequence = self._generate_string_partition(partition_list)
+
+    @staticmethod
+    def _generate_string_partition(partition_list):
+        return tuple(Token(state_type, ''.join(string_value)) for state_type, string_value in partition_list)
+
+    def exclude(self, *args) -> 'Partition':
+        partition = Partition()
+        partition.sequence = tuple(item for item in self.sequence if all(arg != item.state for arg in args))
+        return partition
+
+    def state_at(self, index):
+        try:
+            return self.sequence[index].state
+        except IndexError:
+            return None
+
+    def value_at(self, index):
+        try:
+            return self.sequence[index].value
+        except IndexError:
+            return None
+
+    def token_at(self, index):
+        try:
+            return self.sequence[index]
+        except IndexError:
+            return None
+

@@ -5,6 +5,7 @@ from typing import List
 
 from fmt.fmt import FiniteStateMachine
 from fmt.states import InitialState
+from fmt.util import Partition
 from util.util import FileTreeNode, SourceFile, Helpers, DocumentedClass, DocumentedMethod
 
 
@@ -45,133 +46,115 @@ class Parser:
     def parse_docs(file_contents):
         fmt = FiniteStateMachine(InitialState())
         fmt.process_string(file_contents)
-        partition = Parser._remove_whitespaces(fmt.string_partition)
 
-        last_object = None
+        partition = fmt.partition.exclude('WhitespaceState', 'InitialState')
+
         classes = []
         stack = deque()
-        for i, (state_type, string_value) in enumerate(partition):
-            if Parser._is_class(partition, i):
-                last_object = Parser._detect_class(partition, i)
-                classes.append(last_object)
+
+        for i, token in enumerate(partition.sequence):
+            if Parser._is_class_at_index(i, partition):
+                cls = Parser._detect_class(partition, i)
+                # todo skip parsed tokens
+                classes.append(cls)
 
                 if len(stack) > 0:
-                    stack[-1].inner_classes.append(last_object)
+                    stack[-1].inner_classes.append(cls)
 
-            elif Parser._is_method(partition, i):
+                stack.append(cls)
+
+            elif Parser._is_method_at_index(i, partition):
                 method = Parser._detect_method(partition, i)
-                last_object = method
 
                 if len(stack) == 0:
                     raise Exception('Method is not in the class')
 
                 stack[-1].methods.append(method)
+                stack.append(method)
 
-            elif state_type == 'OpenBracketState':
-                stack.append(last_object)
-                # print('Entering', stack[-1])
-
-            elif state_type == 'ClosedBracketState':
-                item = stack.pop()
-                # print('Leaving', item)
+            elif token.state == 'ClosedBracketState':
+                try:
+                    stack.pop()
+                except IndexError:
+                    print("unexpected closing bracket")
 
         return classes
 
     @staticmethod
-    def _remove_whitespaces(partition):
-        return [item for item in partition if item[0] != 'WhitespaceState' and item[0] != 'InitialState']
+    def _is_method_at_index(index: int, partition: Partition):
+        return partition.state_at(index) == 'NameState' and \
+               partition.state_at(index + 1) == 'NameState' and \
+               partition.state_at(index + 2) == 'ArgumentsParenthesisState' and \
+               partition.state_at(index + 3) == 'OpenBracketState'
 
     @staticmethod
-    def _is_method(partition, location):
-        return partition[location][0] == 'NameState' and \
-               partition[location + 1][0] == 'NameState' and \
-               partition[location + 2][0] == 'ArgumentsParenthesisState' and \
-               partition[location + 3][0] == 'OpenBracketState'
-
-    @staticmethod
-    def _detect_method(partition, location):
+    def _detect_method(partition: Partition, i: int):
         method = DocumentedMethod()
-        i = location
 
-        if partition[i - 1][0] == 'AccessModifierState':
-            method.access_modifier = partition[i - 1][1]
+        method.return_type = partition.value_at(i)
+        method.name = partition.value_at(i + 1)
+        method.args = DocumentedMethod.parse_method_args(partition.value_at(i + 2))
+
+        while partition.state_at(i - 1) == 'ModifierState':
+            method.modifiers.append(partition.value_at(i - 1))
+            i -= 1
+        method.modifiers.reverse()
+        i += 1
+
+        if partition.state_at(i - 2) == 'AccessModifierState':
+            method.access_modifier = partition.value_at(i - 2)
         else:
             method.access_modifier = 'package-private'
 
-        method.return_type = partition[i][1]
-        method.name = partition[i + 1][1]
-        method.args = Parser._parse_method_args(partition[i + 2][1])
-
-        while partition[i - 2][0] == 'AnnotationState':
-            method.annotations.append(partition[i - 2][1])
+        while partition.state_at(i - 3) == 'AnnotationState':
+            method.annotations.append(partition.value_at(i - 3))
             i -= 1
+        method.annotations.reverse()
         i += 1
 
-        if partition[i - 3][0] == 'JavadocState':
-            method.docs = partition[i - 3][1]
+        if partition.state_at(i - 4) == 'JavadocState':
+            method.docs = partition.value_at(i - 4)
         else:
             i += 1
 
         return method
 
     @staticmethod
-    def _parse_method_args(args: str):
-        args_without_parenthesis = args[1:-1].strip()
-        if len(args_without_parenthesis) == 0:
-            return []
-        args_with_types = args_without_parenthesis.split(',')
-        return [arg.split() for arg in args_with_types]
+    def _is_class_at_index(index: int, partition: Partition):
+        return partition.state_at(index) == 'IdentifierState' \
+               and partition.value_at(index) == 'class'
 
     @staticmethod
-    def _is_class(partition, location):
-        return partition[location][0] == 'IdentifierState' and partition[location][1] == 'class'
-
-    @staticmethod
-    def _detect_class(partition, class_token_location):
-        cls = DocumentedClass()
-        i = class_token_location
-
-        if partition[i + 1][0] == 'NameState':
-            cls.name = partition[i + 1][1]
-        else:
-            raise Exception('Class has no name')
-
-        if partition[i + 2][0] == 'IdentifierState' and partition[i + 2][1] == 'extends':
-            if partition[i + 3][0] == 'NameState':
-                cls.extends = partition[i + 3][1]
-            else:
-                raise Exception('Class extends nothing')
-        else:
-            i -= 2
-
-        if partition[i + 4][0] == 'IdentifierState' and partition[i + 4][1] == 'implements':
-            if partition[i + 5][0] != 'NameState':
-                raise Exception('Class implements nothing')
-
-            k = 0
-            while partition[i + 5 + k][0] == 'NameState':
-                cls.implements_list.append(partition[i + 5 + k][1])
-                if partition[i + 6 + k][0] == 'DelimiterState' and partition[i + 6 + k][1] == ',':
-                    k += 2
-                else:
-                    break
-
-        i = class_token_location
-
-        if partition[i - 1][0] == 'AccessModifierState':
-            cls.access_modifier = partition[i - 1][1]
-        else:
-            cls.access_modifier = 'package-private'
+    def _detect_class(partition: Partition, class_token_location: int):
+        tokens_after_class_keyword = []
+        i = class_token_location + 1
+        while partition.state_at(i) is not None:
+            if partition.state_at(i) == 'OpenBracketState':
+                break
+            tokens_after_class_keyword.append(partition.token_at(i))
             i += 1
 
-        while partition[i - 2][0] == 'AnnotationState':
-            cls.annotations.append(partition[i - 2][1])
+        tokens_before_class_keyword = []
+        i = class_token_location - 1
+
+        while partition.state_at(i) == 'ModifierState':
+            tokens_before_class_keyword.append(partition.token_at(i))
             i -= 1
         i += 1
 
-        if partition[i - 3][0] == 'JavadocState':
-            cls.docs = partition[i - 3][1]
+        if partition.state_at(i - 1) == 'AccessModifierState':
+            tokens_before_class_keyword.append(partition.token_at(i - 1))
         else:
             i += 1
 
-        return cls
+        while partition.state_at(i - 2) == 'AnnotationState':
+            tokens_before_class_keyword.append(partition.token_at(i - 2))
+            i -= 1
+        i += 1
+
+        if partition.state_at(i - 3) == 'JavadocState':
+            tokens_before_class_keyword.append(partition.token_at(i - 3))
+        else:
+            i += 1
+
+        return DocumentedClass.from_tokens(reversed(tokens_before_class_keyword), tokens_after_class_keyword)

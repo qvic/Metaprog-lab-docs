@@ -54,6 +54,8 @@ class InitialState(State):
             return AnnotationState()
         elif event.is_start_of('class'):
             return SkipState(InitialState(), activate=True, skip_count=5, as_state='IdentifierState')
+        elif event.is_start_of('interface'):
+            return SkipState(InitialState(), activate=True, skip_count=9, as_state='IdentifierState')
         elif event.is_start_of('static'):
             return SkipState(InitialState(), activate=True, skip_count=6, as_state='ModifierState')
         elif event.is_start_of('final'):
@@ -106,10 +108,10 @@ class JavadocState(State):
 class NameState(State):
 
     def on_event(self, event: CharacterEvent) -> State:
-        if event.character_met.isidentifier():
+        if event.character_met.isidentifier():  # todo any alpha and number
             return self
 
-        if event.character_met == '(':
+        if event.character_met == '(':  # todo can be space before parenthesis
             return ArgumentsParenthesisState()
 
         return InitialState().on_event(event)

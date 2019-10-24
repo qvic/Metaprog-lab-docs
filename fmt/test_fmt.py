@@ -3,6 +3,7 @@ from unittest import TestCase
 
 from fmt.fmt import FiniteStateMachine
 from fmt.states import CharacterEvent, MultilineCommentState, InitialState, JavadocState, SkipState, CommentState
+from fmt.util import Partition, Token
 
 
 class TestStates(TestCase):
@@ -134,5 +135,5 @@ class TestStates(TestCase):
         self.assert_contains_state('AnnotationState', '@z(p = 1, q = 2)', self.fmt.partition)
         self.assert_contains_state('MultilineCommentState', '/*c1*/', self.fmt.partition)
 
-    def assert_contains_state(self, state_type, string_value, container):
-        self.assertIn((state_type, list(string_value)), container)
+    def assert_contains_state(self, state_type, string_value, partition: Partition):
+        self.assertIn(Token(state_type, string_value), partition.sequence)

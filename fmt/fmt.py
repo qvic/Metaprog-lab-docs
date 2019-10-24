@@ -1,11 +1,12 @@
 from fmt.states import InitialState, State, CharacterEvent
+from fmt.util import Partition, Token
 
 
 class FiniteStateMachine:
 
     def __init__(self, initial_state: State):
         self.state = initial_state
-        self.partition = []
+        self._partition = []
         self._current_series = []
 
     def process_string(self, string: str, end=True):
@@ -19,11 +20,11 @@ class FiniteStateMachine:
         self.state = self.state.on_event(event)
 
         if event.eof or _previous_state.type != self.state.type:
-            self.partition.append((_previous_state.type, self._current_series))
+            self._partition.append((_previous_state.type, self._current_series))
             self._current_series = []
 
         self._current_series.append(event.character_met)
 
     @property
-    def string_partition(self):
-        return [(state_type, ''.join(string_value)) for state_type, string_value in self.partition]
+    def partition(self) -> Partition:
+        return Partition(self._partition)

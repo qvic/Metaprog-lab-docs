@@ -59,7 +59,7 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
  * The result of applying a {@link Filter}.
  *
  * @since 1.0
- */''', ['@API(status = STABLE, since = "1.0")', '@Component'], 'public', 'FilterResult',
+ */''', ['@Component', '@API(status = STABLE, since = "1.0")'], 'public', [], 'FilterResult',
                                    'AbstractFilterResult', ['Result', 'Serializable'],
                                    [], []),
             classes[0])
@@ -81,7 +81,7 @@ public class FilterResult implements Result, Serializable {}'''
  * The result of applying a {@link Filter}.
  *
  * @since 1.0
- */''', ['@API(status = STABLE, since = "1.0")', '@Component'], 'public', 'FilterResult',
+ */''', ['@Component', '@API(status = STABLE, since = "1.0")'], 'public', [], 'FilterResult',
                                    None, ['Result', 'Serializable'],
                                    [], []),
             classes[0])
@@ -103,7 +103,7 @@ public class FilterResult extends AbstractFilterResult {}'''
  * The result of applying a {@link Filter}.
  *
  * @since 1.0
- */''', ['@API(status = STABLE, since = "1.0")', '@Component'], 'public', 'FilterResult',
+ */''', ['@Component', '@API(status = STABLE, since = "1.0")'], 'public', [], 'FilterResult',
                                    'AbstractFilterResult', [],
                                    [], []),
             classes[0])
@@ -123,7 +123,7 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
  * The result of applying a {@link Filter}.
  *
  * @since 1.0
- */''', [], 'public', 'FilterResult', 'AbstractFilterResult', ['Result', 'Serializable'], [], []),
+ */''', [], 'public', [], 'FilterResult', 'AbstractFilterResult', ['Result', 'Serializable'], [], []),
             classes[0])
 
     def test_parse_docs_for_class_without_javadoc(self):
@@ -132,8 +132,117 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
         classes = Parser.parse_docs(test_string)
 
         self.assertEqual(
-            DocumentedClass.create(None, ['@Component'], 'public', 'FilterResult', 'AbstractFilterResult',
+            DocumentedClass.create(None, ['@Component'], 'public', [], 'FilterResult', 'AbstractFilterResult',
                                    ['Result', 'Serializable'], [], []),
+            classes[0])
+
+        def test_parse_docs_for_class_with_all_elements(self):
+            test_string = '''/**
+     * The result of applying a {@link Filter}.
+     *
+     * @since 1.0
+     */
+    @Component
+    @API(status = STABLE, since = "1.0")
+    public class FilterResult extends AbstractFilterResult implements Result, Serializable {}'''
+
+            classes = Parser.parse_docs(test_string)
+
+            self.assertEqual(
+                DocumentedClass.create('''/**
+     * The result of applying a {@link Filter}.
+     *
+     * @since 1.0
+     */''', ['@Component', '@API(status = STABLE, since = "1.0")'], 'public', [], 'FilterResult',
+                                       'AbstractFilterResult', ['Result', 'Serializable'],
+                                       [], []),
+                classes[0])
+
+    def test_parse_docs_for_class_with_static_and_final(self):
+        test_string = '''/**
+ * The result of applying a {@link Filter}.
+ *
+ * @since 1.0
+ */
+@Component
+@API(status = STABLE, since = "1.0")
+public static final class FilterResult extends AbstractFilterResult implements Result, Serializable {}'''
+
+        classes = Parser.parse_docs(test_string)
+
+        self.assertEqual(
+            DocumentedClass.create('''/**
+ * The result of applying a {@link Filter}.
+ *
+ * @since 1.0
+ */''', ['@Component', '@API(status = STABLE, since = "1.0")'], 'public', ['static', 'final'], 'FilterResult',
+                                   'AbstractFilterResult', ['Result', 'Serializable'],
+                                   [], []),
+            classes[0])
+
+    def test_parse_docs_for_methods(self):
+        test_string = '''
+public final class A {
+
+    /**
+     * Docs for included
+     */
+    public FilterResult included(String reason) {
+        return new FilterResult(true, reason);
+    }
+
+    static class InnerClass {
+        /**
+         * Docs for innerClassMethod
+         */
+        public void innerClassMethod() {}
+    }
+    
+    /**
+     * Docs for get
+     */
+    @Bean
+    protected static final Type get(Type arg) {}
+
+    static final boolean getValue() {}
+    /**
+     * Docs for main
+     */
+    public static void main(String[] args) {}
+
+    @Bean
+    @Override
+    public String toString() {
+        return this.name;
+    }
+}'''
+        classes = Parser.parse_docs(test_string)
+
+        self.assertEqual(
+            DocumentedClass.create(None, [], 'public', ['final'],
+                                   'A',
+                                   None, [],
+                                   [DocumentedMethod.create('''/**
+     * Docs for included
+     */''', [], 'public', [], 'FilterResult', 'included', [['String', 'reason']]),
+                                    DocumentedMethod.create('''/**
+     * Docs for get
+     */''', ['@Bean'], 'protected', ['static', 'final'], 'Type', 'get', [['Type', 'arg']]),
+                                    DocumentedMethod.create(None, [], 'package-private', ['static', 'final'], 'boolean',
+                                                            'getValue', []),
+                                    DocumentedMethod.create('''/**
+     * Docs for main
+     */''', [], 'public', ['static'], 'void', 'main', [['String[]', 'args']]),
+                                    DocumentedMethod.create(None, ['@Bean', '@Override'], 'public', [], 'String',
+                                                            'toString',
+                                                            [])],
+                                   [DocumentedClass.create(None, [], 'package-private', ['static'], 'InnerClass', None,
+                                                           [], [
+                                                               DocumentedMethod.create('''/**
+         * Docs for innerClassMethod
+         */''', [], 'public', [], 'void',
+                                                                                       'innerClassMethod', [])],
+                                                           [])]),
             classes[0])
 
     def test_parse_docs(self):
@@ -156,7 +265,7 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
         return new FilterResult(true, reason);
     }
     
-    class InnerClass {
+    static class InnerClass {
         
         public void innerClassMethod() {}
     }
@@ -176,19 +285,20 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
  * The result of applying a {@link Filter}.
  *
  * @since 1.0
- */''', ['@API(status = STABLE, since = "1.0")', '@Component'], 'public', 'FilterResult',
+ */''', ['@Component', '@API(status = STABLE, since = "1.0")'], 'public', [], 'FilterResult',
                                    'AbstractFilterResult', ['Result', 'Serializable'],
                                    [DocumentedMethod.create('''/**
      * Factory for creating <em>included</em> results.
      *
      * @param reason the reason why the filtered object was included
      * @return an included {@code FilterResult} with the given reason
-     */''', [], 'public', 'FilterResult', 'included', [['String', 'reason']]),
+     */''', [], 'public', [], 'FilterResult', 'included', [['String', 'reason']]),
                                     DocumentedMethod.create('''/**
      * Overriding toString
-     */''', ['@Override'], 'public', 'String', 'toString', [])],
-                                   [DocumentedClass.create(None, [], 'package-private', 'InnerClass', None, [], [
-                                       DocumentedMethod.create(None, [], 'public', 'void',
-                                                               'innerClassMethod', [])],
+     */''', ['@Override'], 'public', [], 'String', 'toString', [])],
+                                   [DocumentedClass.create(None, [], 'package-private', ['static'], 'InnerClass', None,
+                                                           [], [
+                                                               DocumentedMethod.create(None, [], 'public', [], 'void',
+                                                                                       'innerClassMethod', [])],
                                                            [])]),
             classes[0])

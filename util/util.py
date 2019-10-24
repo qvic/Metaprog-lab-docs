@@ -1,5 +1,6 @@
 import os
 from collections import Counter
+from pprint import pprint
 from typing import List
 
 
@@ -61,9 +62,9 @@ class SourceFile(Representable):
     def __init__(self, file_path: str):
         self.file_path = file_path
 
-    def lines(self):
+    def read_all(self):
         with open(self.file_path, 'r') as file:
-            return file.readlines()
+            return file.read()
 
     def __eq__(self, o: object) -> bool:
         if isinstance(o, SourceFile):
@@ -77,10 +78,10 @@ class SourceFile(Representable):
 class DocumentedClass(Representable):
 
     def __init__(self):
-        # todo static and final
         self.docs = None
         self.annotations = []
-        self.access_modifier = None
+        self.access_modifier = 'package-private'
+        self.modifiers = []
         self.name = None
         self.extends = None
         self.implements_list = []
@@ -93,11 +94,43 @@ class DocumentedClass(Representable):
         return False
 
     @staticmethod
-    def create(docs, annotations, access_modifier, name, extends, implements_list, methods, inner_classes):
+    def from_tokens(before_class_keyword, after_class_keyword):
+        self = DocumentedClass()
+        self.name = after_class_keyword[0].value
+
+        has_extends = False
+        has_implements = False
+        for token in after_class_keyword:
+            if token.state == 'IdentifierState':
+                if token.value == 'extends':
+                    has_extends = True
+                elif token.value == 'implements':
+                    has_implements = True
+            elif token.state == 'NameState':
+                if has_extends:
+                    self.extends = token.value
+                    has_extends = False
+                elif has_implements:
+                    self.implements_list.append(token.value)
+
+        for token in before_class_keyword:
+            if token.state == 'JavadocState':
+                self.docs = token.value
+            elif token.state == 'AnnotationState':
+                self.annotations.append(token.value)
+            elif token.state == 'AccessModifierState':
+                self.access_modifier = token.value or self.access_modifier
+            elif token.state == 'ModifierState':
+                self.modifiers.append(token.value)
+        return self
+
+    @staticmethod
+    def create(docs, annotations, access_modifier, modifiers, name, extends, implements_list, methods, inner_classes):
         self = DocumentedClass()
         self.docs = docs
         self.annotations = annotations
         self.access_modifier = access_modifier
+        self.modifiers = modifiers
         self.name = name
         self.extends = extends
         self.implements_list = implements_list
@@ -112,7 +145,8 @@ class DocumentedMethod(Representable):
         # todo static and final
         self.docs = None
         self.annotations = []
-        self.access_modifier = None
+        self.access_modifier = 'package-private'
+        self.modifiers = []
         self.return_type = None
         self.name = None
         self.args = []
@@ -123,11 +157,20 @@ class DocumentedMethod(Representable):
         return False
 
     @staticmethod
-    def create(docs, annotations, access_modifier, return_type, name, args):
+    def parse_method_args(args: str):
+        args_without_parenthesis = args[1:-1].strip()
+        if len(args_without_parenthesis) == 0:
+            return []
+        args_with_types = args_without_parenthesis.split(',')
+        return [arg.split() for arg in args_with_types]
+
+    @staticmethod
+    def create(docs, annotations, access_modifier, modifiers, return_type, name, args):
         self = DocumentedMethod()
         self.docs = docs
         self.annotations = annotations
         self.access_modifier = access_modifier
+        self.modifiers = modifiers
         self.return_type = return_type
         self.name = name
         self.args = args
