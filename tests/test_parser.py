@@ -1,8 +1,12 @@
 from pprint import pprint
 from unittest import TestCase
 
+from lexer.util import Token, LexerPartition
+from parser.fmt import FiniteStateMachine
 from parser.parser import Parser
+from parser.states import InitialState
 from util.util import FileTreeNode, SourceFile, DocumentedClass, DocumentedMethod
+
 
 
 class TestParser(TestCase):

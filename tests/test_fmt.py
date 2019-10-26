@@ -1,9 +1,9 @@
 from pprint import pprint
 from unittest import TestCase
 
-from fmt.fmt import FiniteStateMachine
-from fmt.states import CharacterEvent, MultilineCommentState, InitialState, JavadocState, SkipState, CommentState
-from fmt.util import Partition, Token
+from lexer.fmt import FiniteStateMachine
+from lexer.states import CharacterEvent, MultilineCommentState, InitialState, JavadocState, SkipState, CommentState
+from lexer.util import LexerPartition, Token
 
 
 class TestStates(TestCase):
@@ -135,5 +135,5 @@ class TestStates(TestCase):
         self.assert_contains_state('AnnotationState', '@z(p = 1, q = 2)', self.fmt.partition)
         self.assert_contains_state('MultilineCommentState', '/*c1*/', self.fmt.partition)
 
-    def assert_contains_state(self, state_type, string_value, partition: Partition):
+    def assert_contains_state(self, state_type, string_value, partition: LexerPartition):
         self.assertIn(Token(state_type, string_value), partition.sequence)

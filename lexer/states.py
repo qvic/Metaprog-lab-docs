@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
 
-from fmt.util import CharacterEvent
+from lexer.util import CharacterEvent
 
 
 # todo metaclass singleton
 class State(ABC):
 
     @abstractmethod
-    def on_event(self, event: CharacterEvent) -> 'State':
+    def on_event(self, event) -> 'State':
         pass
 
     @property
@@ -41,6 +41,8 @@ class InitialState(State):
             elif lookahead[0] == '/':
                 return SkipState(CommentState())
         elif event.character_met == ',':
+            return SkipState(InitialState(), activate=True, as_state='DelimiterState')
+        elif event.character_met == ';':
             return SkipState(InitialState(), activate=True, as_state='DelimiterState')
         elif event.character_met == '{':
             return SkipState(InitialState(), activate=True, as_state='OpenBracketState')
@@ -108,7 +110,8 @@ class JavadocState(State):
 class NameState(State):
 
     def on_event(self, event: CharacterEvent) -> State:
-        if event.character_met.isidentifier():  # todo any alpha and number
+        if event.character_met.isidentifier() or event.character_met.isnumeric() \
+                or event.character_met in ['<', '>']:  # todo any alpha and number
             return self
 
         if event.character_met == '(':  # todo can be space before parenthesis
@@ -159,7 +162,7 @@ class SkipState(State):
         self._activate_next_state = activate
         self._type = next_state.type if not as_state else as_state
 
-    def on_event(self, event: CharacterEvent) -> State:
+    def on_event(self, event) -> State:
         if self.count > 1:
             self.count -= 1
             return self

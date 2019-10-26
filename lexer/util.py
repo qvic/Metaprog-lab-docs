@@ -34,7 +34,7 @@ class Token(Representable):
         return False
 
 
-class Partition(Representable):
+class LexerPartition(Representable):
 
     def __init__(self, partition_list=None):
         if partition_list is None:
@@ -46,8 +46,8 @@ class Partition(Representable):
     def _generate_string_partition(partition_list):
         return tuple(Token(state_type, ''.join(string_value)) for state_type, string_value in partition_list)
 
-    def exclude(self, *args) -> 'Partition':
-        partition = Partition()
+    def exclude(self, *args) -> 'LexerPartition':
+        partition = LexerPartition()
         partition.sequence = tuple(item for item in self.sequence if all(arg != item.state for arg in args))
         return partition
 

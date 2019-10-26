@@ -3,9 +3,9 @@ from collections import deque
 from pprint import pprint
 from typing import List
 
-from fmt.fmt import FiniteStateMachine
-from fmt.states import InitialState
-from fmt.util import Partition
+from lexer.fmt import FiniteStateMachine
+from lexer.states import InitialState
+from lexer.util import LexerPartition
 from util.util import FileTreeNode, SourceFile, Helpers, DocumentedClass, DocumentedMethod
 
 
@@ -81,14 +81,14 @@ class Parser:
         return classes
 
     @staticmethod
-    def _is_method_at_index(index: int, partition: Partition):
+    def _is_method_at_index(index: int, partition: LexerPartition):
         return partition.state_at(index) == 'NameState' and \
                partition.state_at(index + 1) == 'NameState' and \
                partition.state_at(index + 2) == 'ArgumentsParenthesisState' and \
                partition.state_at(index + 3) == 'OpenBracketState'
 
     @staticmethod
-    def _detect_method(partition: Partition, i: int):
+    def _detect_method(partition: LexerPartition, i: int):
         method = DocumentedMethod()
 
         method.return_type = partition.value_at(i)
@@ -120,12 +120,12 @@ class Parser:
         return method
 
     @staticmethod
-    def _is_class_at_index(index: int, partition: Partition):
+    def _is_class_at_index(index: int, partition: LexerPartition):
         return partition.state_at(index) == 'IdentifierState' \
                and partition.value_at(index) == 'class'
 
     @staticmethod
-    def _detect_class(partition: Partition, class_token_location: int):
+    def _detect_class(partition: LexerPartition, class_token_location: int):
         tokens_after_class_keyword = []
         i = class_token_location + 1
         while partition.state_at(i) is not None:

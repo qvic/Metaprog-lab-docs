@@ -94,6 +94,79 @@ class DocumentedClass(Representable):
         return False
 
     @staticmethod
+    def from_partition(token_states):
+        obj = None
+        map = {'docs': None, 'annotations': [], 'access_modifier': None, 'modifiers': [], 'implements': [],
+               'extends': None}
+
+        for state, tokens in token_states:
+            if state == 'DeclarationWithDocsState':
+                map['docs'] = tokens[0].value
+
+            elif state == 'DeclarationWithAnnotationsState':
+                map['annotations'].extend([token.value for token in tokens])
+
+            elif state == 'DeclarationWithAccessModifiersState':
+                map['access_modifier'] = tokens[0].value
+
+            elif state == 'DeclarationWithModifiersState':
+                map['modifiers'].extend([token.value for token in tokens])
+
+            elif state == 'ClassState':
+                obj = DocumentedClass()
+                obj.docs = map['docs']
+                obj.annotations = map['annotations']
+                obj.access_modifier = map['access_modifier']
+                obj.modifiers = map['modifiers']
+
+            elif state == 'ClassNameState':
+                obj.name = tokens[0].value
+
+            elif state == 'ClassExtendsState':
+                obj.extends = tokens[1].value
+
+            elif state == 'ClassImplementsListState':
+                obj.implements_list.extend([token.value for token in tokens[1:] if token.state != 'DelimiterState'])
+
+            elif state == 'ClassOpenBracketState':
+                return obj
+
+            elif state == 'InterfaceState':
+                obj = DocumentedInterface()
+                obj.docs = map['docs']
+                obj.annotations = map['annotations']
+                obj.access_modifier = map['access_modifier']
+                obj.modifiers = map['modifiers']
+
+            elif state == 'InterfaceNameState':
+                obj.name = tokens[0].value
+
+            elif state == 'InterfaceExtendsListState':
+                obj.extends_list.extend([token.value for token in tokens[1:] if token.state != 'DelimiterState'])
+
+            elif state == 'InterfaceOpenBracketState':
+                return obj
+
+            elif state == 'MethodReturnTypeState':
+                obj = DocumentedMethod()
+                obj.return_type = tokens[0].value
+                obj.docs = map['docs']
+                obj.annotations = map['annotations']
+                obj.access_modifier = map['access_modifier']
+                obj.modifiers = map['modifiers']
+
+            elif state == 'MethodNameState':
+                obj.name = tokens[0].value
+
+            elif state == 'MethodArgumentsState':
+                obj.args = DocumentedMethod.parse_method_args(tokens[0].value)
+
+            elif state == 'InterfaceMethodDelimiter' or state == 'MethodOpenBracketState':
+                return obj
+
+        return None
+
+    @staticmethod
     def from_tokens(before_class_keyword, after_class_keyword):
         self = DocumentedClass()
         self.name = after_class_keyword[0].value
@@ -136,6 +209,37 @@ class DocumentedClass(Representable):
         self.implements_list = implements_list
         self.inner_classes = inner_classes
         self.methods = methods
+        return self
+
+
+class DocumentedInterface(Representable):
+
+    def __init__(self):
+        self.docs = None
+        self.annotations = []
+        self.access_modifier = 'package-private'
+        self.modifiers = []
+        self.name = None
+        self.extends_list = []
+        self.methods = []
+        self.inner_classes = []
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
+    @staticmethod
+    def create(docs, annotations, access_modifier, modifiers, name, extends_list, methods, inner_classes):
+        self = DocumentedInterface()
+        self.docs = docs
+        self.annotations = annotations
+        self.access_modifier = access_modifier
+        self.modifiers = modifiers
+        self.name = name
+        self.extends_list = extends_list
+        self.methods = methods
+        self.inner_classes = inner_classes
         return self
 
 

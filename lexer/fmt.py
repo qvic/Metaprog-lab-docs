@@ -1,5 +1,5 @@
-from fmt.states import InitialState, State, CharacterEvent
-from fmt.util import Partition, Token
+from lexer.states import InitialState, State, CharacterEvent
+from lexer.util import LexerPartition, Token
 
 
 class FiniteStateMachine:
@@ -26,5 +26,5 @@ class FiniteStateMachine:
         self._current_series.append(event.character_met)
 
     @property
-    def partition(self) -> Partition:
-        return Partition(self._partition)
+    def partition(self) -> LexerPartition:
+        return LexerPartition(self._partition)
