@@ -13,10 +13,10 @@ def _traverse_tree(tree):
         _traverse_tree(child)
 
 
-class Test(TestCase):
-
-    def test_parse_files(self):
-        tree = Parser._generate_tree_from_list(Parser._list_files_hierarchy("testdata"))
-        print(tree)
-        _traverse_tree(tree)
+# class Test(TestCase):
+#
+#     def test_parse_files(self):
+#         tree = Parser._generate_tree_from_list(Parser._list_files_hierarchy("testdata"))
+#         print(tree)
+#         _traverse_tree(tree)
 

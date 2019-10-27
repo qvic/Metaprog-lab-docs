@@ -104,7 +104,7 @@ class ClassNameState(State):
                 if event.lookahead(1)[0].state == 'NameState':
                     return SkipState(ClassImplementsListState())
         elif event.token.state == 'OpenBracketState' and event.token.value == '{':
-            return SkipState(InitialState(), activate=True, skip_count=2, as_state='ClassOpenBracketState')
+            return ClassOpenBracketState()
 
         return DeadState()
 
@@ -115,7 +115,7 @@ class ClassImplementsState(State):
             if event.lookahead(1)[0].state == 'NameState':
                 return SkipState(ClassImplementsListState())
         elif event.token.state == 'OpenBracketState' and event.token.value == '{':
-            return SkipState(InitialState(), activate=True, skip_count=2, as_state='ClassOpenBracketState')
+            return ClassOpenBracketState()
 
         return DeadState()
 
@@ -126,9 +126,15 @@ class ClassImplementsListState(State):
             if event.lookahead(1)[0].state == 'NameState':
                 return SkipState(self)
         elif event.token.state == 'OpenBracketState' and event.token.value == '{':
-            return SkipState(InitialState(), activate=True, skip_count=2, as_state='ClassOpenBracketState')
+            return ClassOpenBracketState()
 
         return DeadState()
+
+
+class ClassOpenBracketState(State):
+
+    def on_event(self, event) -> 'State':
+        return InitialState().on_event(event)
 
 
 class MethodReturnTypeState(State):

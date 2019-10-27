@@ -6,7 +6,7 @@ from typing import List
 from lexer.fmt import FiniteStateMachine
 from lexer.states import InitialState
 from lexer.util import LexerPartition
-from util.util import FileTreeNode, SourceFile, Helpers, DocumentedClass, DocumentedMethod
+from util.util import FileTreeNode, SourceFile, Helpers, DocumentedClass, DocumentedMethod, DocumentedInterface
 
 
 class Parser:
@@ -158,3 +158,83 @@ class Parser:
             i += 1
 
         return DocumentedClass.from_tokens(reversed(tokens_before_class_keyword), tokens_after_class_keyword)
+
+    @staticmethod
+    def from_partition(token_states):
+        obj = None
+        map = {'docs': None, 'annotations': [], 'access_modifier': None, 'modifiers': [], 'implements': [],
+               'extends': None}
+
+        for state, tokens in token_states:
+            if state == 'DeclarationWithDocsState':
+                map['docs'] = tokens[0].value
+
+            elif state == 'DeclarationWithAnnotationsState':
+                map['annotations'].extend([token.value for token in tokens])
+
+            elif state == 'DeclarationWithAccessModifiersState':
+                map['access_modifier'] = tokens[0].value
+
+            elif state == 'DeclarationWithModifiersState':
+                map['modifiers'].extend([token.value for token in tokens])
+
+            elif state == 'ClassState':
+                obj = DocumentedClass()
+                obj.docs = map['docs']
+                obj.annotations = map['annotations']
+                obj.access_modifier = map['access_modifier']
+                obj.modifiers = map['modifiers']
+
+            elif state == 'ClassNameState':
+                obj.name = tokens[0].value
+
+            elif state == 'ClassExtendsState':
+                obj.extends = tokens[1].value
+
+            elif state == 'ClassImplementsListState':
+                obj.implements_list.extend([token.value for token in tokens[1:] if token.state != 'DelimiterState'])
+
+            elif state == 'ClassOpenBracketState':
+                yield obj
+                yield '{'
+
+            elif state == 'InterfaceState':
+                obj = DocumentedInterface()
+                obj.docs = map['docs']
+                obj.annotations = map['annotations']
+                obj.access_modifier = map['access_modifier']
+                obj.modifiers = map['modifiers']
+
+            elif state == 'InterfaceNameState':
+                obj.name = tokens[0].value
+
+            elif state == 'InterfaceExtendsListState':
+                obj.extends_list.extend([token.value for token in tokens[1:] if token.state != 'DelimiterState'])
+
+            elif state == 'InterfaceOpenBracketState':
+                yield obj
+                yield '{'
+
+            elif state == 'MethodReturnTypeState':
+                obj = DocumentedMethod()
+                obj.return_type = tokens[0].value
+                obj.docs = map['docs']
+                obj.annotations = map['annotations']
+                obj.access_modifier = map['access_modifier']
+                obj.modifiers = map['modifiers']
+
+            elif state == 'MethodNameState':
+                obj.name = tokens[0].value
+
+            elif state == 'MethodArgumentsState':
+                obj.args = DocumentedMethod.parse_method_args(tokens[0].value)
+
+            elif state == 'InterfaceMethodDelimiter':
+                yield obj
+                yield ';'
+
+            elif state == 'MethodOpenBracketState':
+                yield obj
+                yield '{'
+
+        return

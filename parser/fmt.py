@@ -26,26 +26,32 @@ class FiniteStateMachine:
         self.state = initial_state
         self._partition = []
         self._current_series = []
+        self._last_initial_index = 0
 
     def process_tokens(self, partition: LexerPartition):
         i = 0
-        _prev = self.initial_state
+        previous_state = None
+
         while i < len(partition.sequence):
             token = partition.sequence[i]
             event = TokenEvent(token, partition.sequence[i + 1:])
 
             self.step(event)  # todo generator for lookahead
 
-            # if self.state.type == 'DeadState' and _prev.type != 'InitialState':
-            #     self.state = self.initial_state
-            # else:
-            #     i += 1
-            i += 1
+            if self.state.type == 'DeadState':
+                if previous_state is not None and previous_state.type == 'InitialState':
+                    i += 1
+                # self._append_to_partition(self.state)
+                self._current_series = []
+                self._partition = [] # or delete to latest delimiter
+                self.state = self.initial_state
+            else:
+                i += 1
 
-            # pprint(self._partition)
-            # print()
-            _prev = self.state
+            previous_state = self.state
 
+            pprint(self._partition, width=150)
+            print()
             # on dead state discard tokens until initialstate
         self._partition.append((self.state.type, self._current_series))
 
@@ -53,12 +59,7 @@ class FiniteStateMachine:
         _previous_state = self.state
         self.state = self.state.on_event(event)
 
-        if self.state is None:
-            self._append_to_partition(_previous_state)
-            return
-
         if _previous_state.type != self.state.type:
-            # or create DocumentedClass here
             self._append_to_partition(_previous_state)
 
         self._current_series.append(event.token)
