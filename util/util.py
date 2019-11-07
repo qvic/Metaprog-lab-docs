@@ -1,8 +1,5 @@
 import os
-from collections import Counter
-from pprint import pprint
 from typing import List
-
 
 class Helpers:
 
@@ -94,37 +91,6 @@ class DocumentedClass(Representable):
         return False
 
     @staticmethod
-    def from_tokens(before_class_keyword, after_class_keyword):
-        self = DocumentedClass()
-        self.name = after_class_keyword[0].value
-
-        has_extends = False
-        has_implements = False
-        for token in after_class_keyword:
-            if token.state == 'IdentifierState':
-                if token.value == 'extends':
-                    has_extends = True
-                elif token.value == 'implements':
-                    has_implements = True
-            elif token.state == 'NameState':
-                if has_extends:
-                    self.extends = token.value
-                    has_extends = False
-                elif has_implements:
-                    self.implements_list.append(token.value)
-
-        for token in before_class_keyword:
-            if token.state == 'JavadocState':
-                self.docs = token.value
-            elif token.state == 'AnnotationState':
-                self.annotations.append(token.value)
-            elif token.state == 'AccessModifierState':
-                self.access_modifier = token.value or self.access_modifier
-            elif token.state == 'ModifierState':
-                self.modifiers.append(token.value)
-        return self
-
-    @staticmethod
     def create(docs, annotations, access_modifier, modifiers, name, extends, implements_list, methods, inner_classes):
         self = DocumentedClass()
         self.docs = docs
@@ -181,6 +147,7 @@ class DocumentedMethod(Representable):
         self.return_type = None
         self.name = None
         self.args = []
+        self.signature = False
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -189,6 +156,7 @@ class DocumentedMethod(Representable):
 
     @staticmethod
     def parse_method_args(args: str):
+        # todo fix generic argument with comma
         args_without_parenthesis = args[1:-1].strip()
         if len(args_without_parenthesis) == 0:
             return []
@@ -196,7 +164,7 @@ class DocumentedMethod(Representable):
         return [arg.split() for arg in args_with_types]
 
     @staticmethod
-    def create(docs, annotations, access_modifier, modifiers, return_type, name, args):
+    def create(docs, annotations, access_modifier, modifiers, return_type, name, args, signature=False):
         self = DocumentedMethod()
         self.docs = docs
         self.annotations = annotations
@@ -205,4 +173,16 @@ class DocumentedMethod(Representable):
         self.return_type = return_type
         self.name = name
         self.args = args
+        self.signature = signature
         return self
+
+
+class Delimiter(Representable):
+
+    def __init__(self, char):
+        self.char = char
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False

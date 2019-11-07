@@ -2,10 +2,10 @@ from pprint import pprint
 from unittest import TestCase
 
 from lexer.util import Token, LexerPartition
-from parser.fmt import FiniteStateMachine
+from parser.fmt import ParserFiniteStateMachine
 from parser.parser import Parser
-from parser.states import InitialState
-from util.util import DocumentedClass, DocumentedInterface, DocumentedMethod
+from parser.states import ParserInitialState
+from util.util import DocumentedClass, DocumentedInterface, DocumentedMethod, Delimiter
 
 
 class TestFMT(TestCase):
@@ -19,7 +19,7 @@ class TestFMT(TestCase):
         partition = LexerPartition()
         partition.sequence = test_list
 
-        fmt = FiniteStateMachine(InitialState())
+        fmt = ParserFiniteStateMachine(ParserInitialState())
         fmt.process_tokens(partition)
 
         iterator = Parser.from_partition(fmt._partition)
@@ -37,7 +37,7 @@ class TestFMT(TestCase):
         partition = LexerPartition()
         partition.sequence = test_list
 
-        fmt = FiniteStateMachine(InitialState())
+        fmt = ParserFiniteStateMachine(ParserInitialState())
         fmt.process_tokens(partition)
 
         iterator = Parser.from_partition(fmt._partition)
@@ -54,7 +54,7 @@ class TestFMT(TestCase):
         partition = LexerPartition()
         partition.sequence = test_list
 
-        fmt = FiniteStateMachine(InitialState())
+        fmt = ParserFiniteStateMachine(ParserInitialState())
         fmt.process_tokens(partition)
 
         iterator = Parser.from_partition(fmt._partition)
@@ -68,7 +68,7 @@ class TestFMT(TestCase):
         partition = LexerPartition()
         partition.sequence = test_list
 
-        fmt = FiniteStateMachine(InitialState())
+        fmt = ParserFiniteStateMachine(ParserInitialState())
         fmt.process_tokens(partition)
 
         iterator = Parser.from_partition(fmt._partition)
@@ -77,21 +77,20 @@ class TestFMT(TestCase):
 
     def test_parser(self):
         test_list = [Token('IdentifierState', 'class'), Token('NameState', 'X<T>'), Token('IdentifierState', 'extends'),
-                     Token('NameState', 'E'), Token('OpenBracketState', '{'), Token('NameState', 'void'),
-                     Token('NameState', 'method'),
+                     Token('NameState', 'E'), Token('OpenBracketState', '{'),
+                     Token('NameState', 'String'), Token('NameState', 'property'), Token('DelimiterState', ';'),
+                     Token('NameState', 'void'), Token('NameState', 'method'),
                      Token('ArgumentsParenthesisState', '(String arg, int arg)'),
                      Token('OpenBracketState', '{')]
 
         partition = LexerPartition()
         partition.sequence = test_list
 
-        fmt = FiniteStateMachine(InitialState())
+        fmt = ParserFiniteStateMachine(ParserInitialState())
         fmt.process_tokens(partition)
 
         iterator = Parser.from_partition(fmt._partition)
 
         self.assertEqual(next(iterator), DocumentedClass.create(None, [], None, [], 'X<T>', 'E', [], [], []))
-        self.assertEqual(next(iterator), '{')
-        self.assertEqual(next(iterator), DocumentedMethod.create(None, [], None, [], 'void', 'method',
+        self.assertEqual(next(iterator), DocumentedMethod.create(None, [], 'package-private', [], 'void', 'method',
                                                                  [['String', 'arg'], ['int', 'arg']]))
-        self.assertEqual(next(iterator), '{')

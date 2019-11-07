@@ -107,4 +107,5 @@ venv.bak/
 .idea/
 
 # test data
-testdata/
+tests/testdata/
+tests/html/

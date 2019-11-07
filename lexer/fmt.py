@@ -19,7 +19,7 @@ class FiniteStateMachine:
         _previous_state = self.state
         self.state = self.state.on_event(event)
 
-        if event.eof or _previous_state.type != self.state.type:
+        if event.eof or _previous_state.separated or _previous_state.type != self.state.type:
             self._partition.append((_previous_state.type, self._current_series))
             self._current_series = []
 

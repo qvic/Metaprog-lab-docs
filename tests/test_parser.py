@@ -1,12 +1,7 @@
-from pprint import pprint
 from unittest import TestCase
 
-from lexer.util import Token, LexerPartition
-from parser.fmt import FiniteStateMachine
 from parser.parser import Parser
-from parser.states import InitialState
-from util.util import FileTreeNode, SourceFile, DocumentedClass, DocumentedMethod
-
+from util.util import FileTreeNode, SourceFile, DocumentedClass, DocumentedMethod, DocumentedInterface
 
 
 class TestParser(TestCase):
@@ -271,7 +266,7 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
     
     static class InnerClass {
         
-        public void innerClassMethod() {}
+        public void innerClassMethod() {lol{}}
     }
     
     /**
@@ -305,4 +300,46 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
                                                                DocumentedMethod.create(None, [], 'public', [], 'void',
                                                                                        'innerClassMethod', [])],
                                                            [])]),
+            classes[0])
+
+    def test_parse_interface(self):
+        test_string = '''
+@API(status = STABLE, since = "1.0")
+public interface FilterResult extends Result, Serializable {
+    /**
+     * Factory for creating <em>included</em> results.
+     *
+     * @param reason the reason why the filtered object was included
+     * @return an included {@code FilterResult} with the given reason
+     */
+    public default FilterResult included(String reason) {
+        return new FilterResult(true, reason);
+    }
+    
+    static class InnerClass {
+        public void innerClassMethod() {}
+    }
+    
+    @Override
+    String toString();
+}'''
+        classes = Parser.parse_docs(test_string)
+
+        self.assertEqual(
+            DocumentedInterface.create(None, ['@API(status = STABLE, since = "1.0")'], 'public', [], 'FilterResult',
+                                       ['Result', 'Serializable'],
+                                       [DocumentedMethod.create('''/**
+     * Factory for creating <em>included</em> results.
+     *
+     * @param reason the reason why the filtered object was included
+     * @return an included {@code FilterResult} with the given reason
+     */''', [], 'public', ['default'], 'FilterResult', 'included', [['String', 'reason']]),
+                                        DocumentedMethod.create(None, ['@Override'], 'package-private', [], 'String', 'toString', [], signature=True)],
+                                       [DocumentedClass.create(None, [], 'package-private', ['static'], 'InnerClass',
+                                                               None,
+                                                               [], [
+                                                                   DocumentedMethod.create(None, [], 'public', [],
+                                                                                           'void',
+                                                                                           'innerClassMethod', [])],
+                                                               [])]),
             classes[0])

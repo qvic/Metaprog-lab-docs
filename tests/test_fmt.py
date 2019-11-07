@@ -82,7 +82,7 @@ class TestStates(TestCase):
         self.assert_contains_state('JavadocState', '/**doc*/', self.fmt.partition)
         self.assert_contains_state('IdentifierState', 'class', self.fmt.partition)
         self.assert_contains_state('OpenBracketState', '{', self.fmt.partition)
-        self.assert_contains_state('ClosedBracketState', '}}', self.fmt.partition)
+        self.assert_contains_state('ClosedBracketState', '}', self.fmt.partition)
 
     def test_SkipState(self):
         self.fmt = FiniteStateMachine(SkipState(InitialState()))

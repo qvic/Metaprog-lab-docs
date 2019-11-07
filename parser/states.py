@@ -1,8 +1,12 @@
+from collections import deque
+
 from lexer.states import State, SkipState
 from parser.fmt import TokenEvent
 
 
-class InitialState(State):
+class ParserInitialState(State):
+
+    # todo enum!
     def on_event(self, event: TokenEvent) -> 'State':
         if event.token.state == 'JavadocState':
             return DeclarationWithDocsState()
@@ -18,8 +22,16 @@ class InitialState(State):
             return InterfaceState()
         elif event.token.state == 'NameState':
             return MethodReturnTypeState()
+        elif event.token.state == 'ClosedBracketState':
+            return ClosedBracketState()
+        elif event.token.state == 'OpenBracketState':
+            return OpenBracketState()
 
         return DeadState()
+
+    @property
+    def type(self) -> str:
+        return 'InitialState'
 
 
 class DeclarationWithDocsState(State):
@@ -134,7 +146,7 @@ class ClassImplementsListState(State):
 class ClassOpenBracketState(State):
 
     def on_event(self, event) -> 'State':
-        return InitialState().on_event(event)
+        return ParserInitialState().on_event(event)
 
 
 class MethodReturnTypeState(State):
@@ -156,10 +168,10 @@ class MethodNameState(State):
 class MethodArgumentsState(State):
     def on_event(self, event) -> 'State':
         if event.token.state == 'DelimiterState' and event.token.value == ';':
-            return SkipState(InitialState(), activate=True, skip_count=2, as_state='InterfaceMethodDelimiter')
+            return SkipState(ParserInitialState(), activate=True, as_state='InterfaceMethodDelimiter')
 
         elif event.token.state == 'OpenBracketState' and event.token.value == '{':
-            return SkipState(InitialState(), activate=True, skip_count=2, as_state='MethodOpenBracketState')
+            return MethodOpenBracketState()
 
         return DeadState()
 
@@ -178,8 +190,8 @@ class InterfaceNameState(State):
             if event.token.value == 'extends':
                 if event.lookahead(1)[0].state == 'NameState':
                     return SkipState(InterfaceExtendsListState())
-            elif event.token.state == 'OpenBracketState' and event.token.value == '{':
-                return SkipState(InitialState(), activate=True, skip_count=2, as_state='InterfaceOpenBracketState')
+        elif event.token.state == 'OpenBracketState' and event.token.value == '{':
+            return SkipState(ParserInitialState(), activate=True, as_state='InterfaceOpenBracketState')
 
         return DeadState()
 
@@ -190,9 +202,49 @@ class InterfaceExtendsListState(State):
             if event.lookahead(1)[0].state == 'NameState':
                 return SkipState(self)
         elif event.token.state == 'OpenBracketState' and event.token.value == '{':
-            return SkipState(InitialState(), activate=True, skip_count=2, as_state='InterfaceOpenBracketState')
+            return SkipState(ParserInitialState(), activate=True, as_state='InterfaceOpenBracketState')
 
         return DeadState()
+
+
+class MethodOpenBracketState(State):
+    def on_event(self, event) -> 'State':
+        if event.token.state == 'ClosedBracketState':
+            return ClosedBracketState()
+        return MethodBodyState()
+
+
+class MethodBodyState(State):
+
+    def __init__(self):
+        self.stack = deque()
+
+    # todo another way
+
+    def on_event(self, event) -> 'State':
+        if event.token.state == 'OpenBracketState':
+            self.stack.append('{')
+        elif event.token.state == 'ClosedBracketState':
+            if len(self.stack) == 0:
+                return ClosedBracketState()
+
+            self.stack.pop()
+
+        return self
+
+
+class ClosedBracketState(State):
+    separated = True
+
+    def on_event(self, event) -> 'State':
+        return ParserInitialState().on_event(event)
+
+
+class OpenBracketState(State):
+    separated = True
+
+    def on_event(self, event) -> 'State':
+        return ParserInitialState().on_event(event)
 
 
 class DeadState(State):

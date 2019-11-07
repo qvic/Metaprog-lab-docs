@@ -6,7 +6,10 @@ from typing import List
 from lexer.fmt import FiniteStateMachine
 from lexer.states import InitialState
 from lexer.util import LexerPartition
-from util.util import FileTreeNode, SourceFile, Helpers, DocumentedClass, DocumentedMethod, DocumentedInterface
+from parser.fmt import ParserFiniteStateMachine
+from parser.states import ParserInitialState
+from util.util import FileTreeNode, SourceFile, Helpers, DocumentedClass, DocumentedMethod, DocumentedInterface, \
+    Delimiter
 
 
 class Parser:
@@ -52,112 +55,39 @@ class Parser:
         classes = []
         stack = deque()
 
-        for i, token in enumerate(partition.sequence):
-            if Parser._is_class_at_index(i, partition):
-                cls = Parser._detect_class(partition, i)
+        fmt = ParserFiniteStateMachine(ParserInitialState())
+        fmt.process_tokens(partition)
+
+        iterator = Parser.from_partition(fmt._partition)
+
+        for obj in iterator:
+            if isinstance(obj, DocumentedClass) or isinstance(obj, DocumentedInterface):
                 # todo skip parsed tokens
-                classes.append(cls)
+                classes.append(obj)
 
                 if len(stack) > 0:
-                    stack[-1].inner_classes.append(cls)
+                    stack[-1].inner_classes.append(obj)
 
-                stack.append(cls)
+                stack.append(obj)
 
-            elif Parser._is_method_at_index(i, partition):
-                method = Parser._detect_method(partition, i)
-
+            elif isinstance(obj, DocumentedMethod):
                 if len(stack) == 0:
                     raise Exception('Method is not in the class')
 
-                stack[-1].methods.append(method)
-                stack.append(method)
+                if isinstance(stack[-1], DocumentedClass) or isinstance(stack[-1], DocumentedInterface):
+                    stack[-1].methods.append(obj)
+                    if not obj.signature:
+                        stack.append(obj)
 
-            elif token.state == 'ClosedBracketState':
+            elif isinstance(obj, Delimiter) and obj.char == '}':  # todo is closing bracket helper method
                 try:
                     stack.pop()
                 except IndexError:
-                    print("unexpected closing bracket")
+                    print("Unexpected closing bracket")
+            elif isinstance(obj, Delimiter) and obj.char == '{':
+                stack.append('Block')
 
         return classes
-
-    @staticmethod
-    def _is_method_at_index(index: int, partition: LexerPartition):
-        return partition.state_at(index) == 'NameState' and \
-               partition.state_at(index + 1) == 'NameState' and \
-               partition.state_at(index + 2) == 'ArgumentsParenthesisState' and \
-               partition.state_at(index + 3) == 'OpenBracketState'
-
-    @staticmethod
-    def _detect_method(partition: LexerPartition, i: int):
-        method = DocumentedMethod()
-
-        method.return_type = partition.value_at(i)
-        method.name = partition.value_at(i + 1)
-        method.args = DocumentedMethod.parse_method_args(partition.value_at(i + 2))
-
-        while partition.state_at(i - 1) == 'ModifierState':
-            method.modifiers.append(partition.value_at(i - 1))
-            i -= 1
-        method.modifiers.reverse()
-        i += 1
-
-        if partition.state_at(i - 2) == 'AccessModifierState':
-            method.access_modifier = partition.value_at(i - 2)
-        else:
-            method.access_modifier = 'package-private'
-
-        while partition.state_at(i - 3) == 'AnnotationState':
-            method.annotations.append(partition.value_at(i - 3))
-            i -= 1
-        method.annotations.reverse()
-        i += 1
-
-        if partition.state_at(i - 4) == 'JavadocState':
-            method.docs = partition.value_at(i - 4)
-        else:
-            i += 1
-
-        return method
-
-    @staticmethod
-    def _is_class_at_index(index: int, partition: LexerPartition):
-        return partition.state_at(index) == 'IdentifierState' \
-               and partition.value_at(index) == 'class'
-
-    @staticmethod
-    def _detect_class(partition: LexerPartition, class_token_location: int):
-        tokens_after_class_keyword = []
-        i = class_token_location + 1
-        while partition.state_at(i) is not None:
-            if partition.state_at(i) == 'OpenBracketState':
-                break
-            tokens_after_class_keyword.append(partition.token_at(i))
-            i += 1
-
-        tokens_before_class_keyword = []
-        i = class_token_location - 1
-
-        while partition.state_at(i) == 'ModifierState':
-            tokens_before_class_keyword.append(partition.token_at(i))
-            i -= 1
-        i += 1
-
-        if partition.state_at(i - 1) == 'AccessModifierState':
-            tokens_before_class_keyword.append(partition.token_at(i - 1))
-        else:
-            i += 1
-
-        while partition.state_at(i - 2) == 'AnnotationState':
-            tokens_before_class_keyword.append(partition.token_at(i - 2))
-            i -= 1
-        i += 1
-
-        if partition.state_at(i - 3) == 'JavadocState':
-            tokens_before_class_keyword.append(partition.token_at(i - 3))
-        else:
-            i += 1
-
-        return DocumentedClass.from_tokens(reversed(tokens_before_class_keyword), tokens_after_class_keyword)
 
     @staticmethod
     def from_partition(token_states):
@@ -196,7 +126,10 @@ class Parser:
 
             elif state == 'ClassOpenBracketState':
                 yield obj
-                yield '{'
+                # todo don't reassign, create new class for this purpose
+                map = {'docs': None, 'annotations': [], 'access_modifier': 'package-private', 'modifiers': [],
+                       'implements': [],
+                       'extends': None}
 
             elif state == 'InterfaceState':
                 obj = DocumentedInterface()
@@ -213,7 +146,9 @@ class Parser:
 
             elif state == 'InterfaceOpenBracketState':
                 yield obj
-                yield '{'
+                map = {'docs': None, 'annotations': [], 'access_modifier': 'package-private', 'modifiers': [],
+                       'implements': [],
+                       'extends': None}
 
             elif state == 'MethodReturnTypeState':
                 obj = DocumentedMethod()
@@ -230,11 +165,27 @@ class Parser:
                 obj.args = DocumentedMethod.parse_method_args(tokens[0].value)
 
             elif state == 'InterfaceMethodDelimiter':
+                obj.signature = True
                 yield obj
-                yield ';'
+                map = {'docs': None, 'annotations': [], 'access_modifier': 'package-private', 'modifiers': [],
+                       'implements': [],
+                       'extends': None}
 
             elif state == 'MethodOpenBracketState':
                 yield obj
-                yield '{'
+                map = {'docs': None, 'annotations': [], 'access_modifier': 'package-private', 'modifiers': [],
+                       'implements': [],
+                       'extends': None}
+
+            elif state == 'ClosedBracketState':
+                yield Delimiter(tokens[0].value)
+
+            elif state == 'OpenBracketState':
+                yield Delimiter(tokens[0].value)
+
+            elif state == 'DeadState':
+                map = {'docs': None, 'annotations': [], 'access_modifier': 'package-private', 'modifiers': [],
+                       'implements': [],
+                       'extends': None}
 
         return
