@@ -20,6 +20,10 @@ class ParserInitialState(State):
             return ClassState()
         elif event.token.state == 'IdentifierState' and event.token.value == 'interface':
             return InterfaceState()
+        elif event.token.state == 'IdentifierState' and event.token.value == 'import':
+            return ImportState()
+        elif event.token.state == 'IdentifierState' and event.token.value == 'package':
+            return PackageState()
         elif event.token.state == 'NameState':
             return MethodReturnTypeState()
         elif event.token.state == 'ClosedBracketState':
@@ -32,6 +36,28 @@ class ParserInitialState(State):
     @property
     def type(self) -> str:
         return 'InitialState'
+
+
+class ImportState(State):
+
+    separated = True
+
+    def on_event(self, event) -> 'State':
+        lookahead = event.lookahead(1)[0]
+        if event.token.state == 'NameState' and lookahead.state == 'DelimiterState' and lookahead.value == ';':
+            return SkipState(ParserInitialState(), activate=True, skip_count=2, as_state=self.type)
+
+        return DeadState()
+
+
+class PackageState(State):
+
+    def on_event(self, event) -> 'State':
+        lookahead = event.lookahead(1)[0]
+        if event.token.state == 'NameState' and lookahead.state == 'DelimiterState' and lookahead.value == ';':
+            return SkipState(ParserInitialState(), activate=True, skip_count=2, as_state=self.type)
+
+        return DeadState()
 
 
 class DeclarationWithDocsState(State):

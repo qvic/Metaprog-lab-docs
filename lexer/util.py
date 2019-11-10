@@ -19,7 +19,8 @@ class CharacterEvent:
         return ''.join(n_lookahead)
 
     def is_start_of(self, string: str) -> bool:
-        return string == self.character_met + self._lookahead[:len(string) - 1]
+        return string == self.character_met + self._lookahead[:len(string) - 1] \
+               and (len(self._lookahead) < len(string) or not self._lookahead[len(string) - 1].isidentifier())
 
 
 class Token(Representable):
@@ -68,4 +69,3 @@ class LexerPartition(Representable):
             return self.sequence[index]
         except IndexError:
             return None
-

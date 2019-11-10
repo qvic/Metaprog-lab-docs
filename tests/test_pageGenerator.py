@@ -1,9 +1,9 @@
 from unittest import TestCase
 
-from page_generator.generator import PageGenerator
+from page.generator import PageGenerator
+from parser.parser import Parser
 
 
 class TestPageGenerator(TestCase):
     def test_from_directory(self):
-        # pass
-        PageGenerator.from_directory('testdata')
+        Parser.parse('tests/testdata/2')

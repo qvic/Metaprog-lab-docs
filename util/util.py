@@ -1,6 +1,7 @@
 import os
 from typing import List
 
+
 class Helpers:
 
     @staticmethod
@@ -53,6 +54,16 @@ class FileTreeNode:
 
         return result
 
+    def traverse(self, callback):
+        for file in self.files:
+            print('#' * 30)
+            print('reading', file.file_path)
+            print()
+            callback(file)
+
+        for child in self.children:
+            child.traverse(callback)
+
 
 class SourceFile(Representable):
 
@@ -77,7 +88,7 @@ class DocumentedClass(Representable):
     def __init__(self):
         self.docs = None
         self.annotations = []
-        self.access_modifier = 'package-private'
+        self.access_modifier = None
         self.modifiers = []
         self.name = None
         self.extends = None
@@ -104,13 +115,22 @@ class DocumentedClass(Representable):
         self.methods = methods
         return self
 
+    @staticmethod
+    def from_declaration(declaration: 'Declaration'):
+        self = DocumentedClass()
+        self.docs = declaration.docs
+        self.annotations = declaration.annotations
+        self.access_modifier = declaration.access_modifier
+        self.modifiers = declaration.modifiers
+        return self
+
 
 class DocumentedInterface(Representable):
 
     def __init__(self):
         self.docs = None
         self.annotations = []
-        self.access_modifier = 'package-private'
+        self.access_modifier = None
         self.modifiers = []
         self.name = None
         self.extends_list = []
@@ -133,6 +153,15 @@ class DocumentedInterface(Representable):
         self.extends_list = extends_list
         self.methods = methods
         self.inner_classes = inner_classes
+        return self
+
+    @staticmethod
+    def from_declaration(declaration: 'Declaration'):
+        self = DocumentedInterface()
+        self.docs = declaration.docs
+        self.annotations = declaration.annotations
+        self.access_modifier = declaration.access_modifier
+        self.modifiers = declaration.modifiers
         return self
 
 
@@ -176,6 +205,15 @@ class DocumentedMethod(Representable):
         self.signature = signature
         return self
 
+    @staticmethod
+    def from_declaration(declaration: 'Declaration'):
+        self = DocumentedMethod()
+        self.docs = declaration.docs
+        self.annotations = declaration.annotations
+        self.access_modifier = declaration.access_modifier or self.access_modifier
+        self.modifiers = declaration.modifiers
+        return self
+
 
 class Delimiter(Representable):
 
@@ -186,3 +224,35 @@ class Delimiter(Representable):
         if type(other) is type(self):
             return self.__dict__ == other.__dict__
         return False
+
+
+class Imports(Representable):
+
+    def __init__(self):
+        self.names = []
+
+    def add_name(self, name: str):
+        self.names.append(name)
+
+
+class PackageName(Representable):
+
+    def __init__(self):
+        self.name = None
+
+
+class Declaration(Representable):
+
+    def __init__(self):
+        self.docs = None
+        self.annotations = []
+        self.access_modifier = None
+        self.modifiers = []
+
+
+class DocumentedFile(Representable):
+
+    def __init__(self):
+        self.classes = []
+        self.imports = []
+        self.package = None

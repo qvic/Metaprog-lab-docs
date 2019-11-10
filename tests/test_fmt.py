@@ -55,9 +55,7 @@ class TestStates(TestCase):
         self.assert_contains_state('AccessModifierState', 'private', self.fmt.partition)
         self.assert_contains_state('AccessModifierState', 'protected', self.fmt.partition)
         self.assert_contains_state('NameState', 'unprotected', self.fmt.partition)
-        self.assert_contains_state('AccessModifierState', 'public', self.fmt.partition)
-        self.assert_contains_state('NameState', 'ity', self.fmt.partition)
-        self.assert_contains_state('AccessModifierState', 'public', self.fmt.partition)
+        self.assert_contains_state('NameState', 'publicity', self.fmt.partition)
 
     def test_IdentifierState(self):
         self.fmt = FiniteStateMachine(InitialState())
@@ -68,8 +66,7 @@ class TestStates(TestCase):
         self.assert_contains_state('AccessModifierState', 'public', self.fmt.partition)
         self.assert_contains_state('IdentifierState', 'class', self.fmt.partition)
         self.assert_contains_state('NameState', 'notclass', self.fmt.partition)
-        self.assert_contains_state('IdentifierState', 'class', self.fmt.partition)
-        self.assert_contains_state('NameState', 'es', self.fmt.partition)
+        self.assert_contains_state('NameState', 'classes', self.fmt.partition)
 
     def test_DelimiterState(self):
         self.fmt = FiniteStateMachine(InitialState())

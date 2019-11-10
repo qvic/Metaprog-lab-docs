@@ -1,19 +1,25 @@
 import os
 from collections import deque
-from pprint import pprint
 from typing import List
 
 from lexer.fmt import FiniteStateMachine
 from lexer.states import InitialState
-from lexer.util import LexerPartition
+from page.generator import PageGenerator
 from parser.fmt import ParserFiniteStateMachine
 from parser.states import ParserInitialState
 from util.util import FileTreeNode, SourceFile, Helpers, DocumentedClass, DocumentedMethod, DocumentedInterface, \
-    Delimiter
+    Delimiter, PackageName, Imports, Declaration, DocumentedFile
 
 
 class Parser:
     ACCEPTED_EXTENSIONS = ['.java']
+
+    @staticmethod
+    def parse(dir_path: str):
+        tree = Parser._generate_tree_from_list(Parser._list_files_hierarchy(dir_path))
+        print(tree)
+        tree.traverse(lambda file: PageGenerator.create_file(file.file_path, Parser.parse_structure(file.read_all())))
+        # tree.traverse(lambda file: Parser.parse_structure(file.read_all()))
 
     @staticmethod
     def _list_files_hierarchy(dir_path: str) -> List:
@@ -26,6 +32,9 @@ class Parser:
 
     @staticmethod
     def _generate_tree_from_list(file_hierarchy_list: List) -> FileTreeNode:
+        if len(file_hierarchy_list) == 0:
+            raise Exception('Path does not exist')
+
         root_path, root_directories, root_files = file_hierarchy_list[0]
         root_node = FileTreeNode(root_path, root_files)
 
@@ -46,24 +55,22 @@ class Parser:
         return root_node
 
     @staticmethod
-    def parse_docs(file_contents):
+    def parse_structure(file_contents):
         fmt = FiniteStateMachine(InitialState())
         fmt.process_string(file_contents)
-
         partition = fmt.partition.exclude('WhitespaceState', 'InitialState')
-
-        classes = []
-        stack = deque()
 
         fmt = ParserFiniteStateMachine(ParserInitialState())
         fmt.process_tokens(partition)
 
         iterator = Parser.from_partition(fmt._partition)
+        stack = deque()
+
+        file = DocumentedFile()
 
         for obj in iterator:
             if isinstance(obj, DocumentedClass) or isinstance(obj, DocumentedInterface):
-                # todo skip parsed tokens
-                classes.append(obj)
+                file.classes.append(obj)
 
                 if len(stack) > 0:
                     stack[-1].inner_classes.append(obj)
@@ -79,41 +86,53 @@ class Parser:
                     if not obj.signature:
                         stack.append(obj)
 
-            elif isinstance(obj, Delimiter) and obj.char == '}':  # todo is closing bracket helper method
+            elif isinstance(obj, Delimiter) and obj.char == '}':
                 try:
                     stack.pop()
                 except IndexError:
                     print("Unexpected closing bracket")
+
             elif isinstance(obj, Delimiter) and obj.char == '{':
                 stack.append('Block')
 
-        return classes
+            elif isinstance(obj, PackageName):
+                file.package = obj.name
+
+            elif isinstance(obj, Imports):
+                file.imports = obj.names
+
+        return file
 
     @staticmethod
     def from_partition(token_states):
         obj = None
-        map = {'docs': None, 'annotations': [], 'access_modifier': None, 'modifiers': [], 'implements': [],
-               'extends': None}
+        imports = Imports()
+        package = PackageName()
+        declaration = Declaration()
 
         for state, tokens in token_states:
-            if state == 'DeclarationWithDocsState':
-                map['docs'] = tokens[0].value
+            if state == 'ImportState':
+                imports.add_name(tokens[1].value)
+
+            elif state == 'PackageState':
+                package.name = tokens[1].value
+                yield package
+
+            elif state == 'DeclarationWithDocsState':
+                declaration.docs = tokens[0].value
 
             elif state == 'DeclarationWithAnnotationsState':
-                map['annotations'].extend([token.value for token in tokens])
+                declaration.annotations.extend([token.value for token in tokens])
 
             elif state == 'DeclarationWithAccessModifiersState':
-                map['access_modifier'] = tokens[0].value
+                declaration.access_modifier = tokens[0].value
 
             elif state == 'DeclarationWithModifiersState':
-                map['modifiers'].extend([token.value for token in tokens])
+                declaration.modifiers.extend([token.value for token in tokens])
 
             elif state == 'ClassState':
-                obj = DocumentedClass()
-                obj.docs = map['docs']
-                obj.annotations = map['annotations']
-                obj.access_modifier = map['access_modifier']
-                obj.modifiers = map['modifiers']
+                yield imports
+                obj = DocumentedClass.from_declaration(declaration)
 
             elif state == 'ClassNameState':
                 obj.name = tokens[0].value
@@ -126,17 +145,10 @@ class Parser:
 
             elif state == 'ClassOpenBracketState':
                 yield obj
-                # todo don't reassign, create new class for this purpose
-                map = {'docs': None, 'annotations': [], 'access_modifier': 'package-private', 'modifiers': [],
-                       'implements': [],
-                       'extends': None}
+                declaration = Declaration()
 
             elif state == 'InterfaceState':
-                obj = DocumentedInterface()
-                obj.docs = map['docs']
-                obj.annotations = map['annotations']
-                obj.access_modifier = map['access_modifier']
-                obj.modifiers = map['modifiers']
+                obj = DocumentedInterface.from_declaration(declaration)
 
             elif state == 'InterfaceNameState':
                 obj.name = tokens[0].value
@@ -146,17 +158,11 @@ class Parser:
 
             elif state == 'InterfaceOpenBracketState':
                 yield obj
-                map = {'docs': None, 'annotations': [], 'access_modifier': 'package-private', 'modifiers': [],
-                       'implements': [],
-                       'extends': None}
+                declaration = Declaration()
 
             elif state == 'MethodReturnTypeState':
-                obj = DocumentedMethod()
+                obj = DocumentedMethod.from_declaration(declaration)
                 obj.return_type = tokens[0].value
-                obj.docs = map['docs']
-                obj.annotations = map['annotations']
-                obj.access_modifier = map['access_modifier']
-                obj.modifiers = map['modifiers']
 
             elif state == 'MethodNameState':
                 obj.name = tokens[0].value
@@ -167,15 +173,11 @@ class Parser:
             elif state == 'InterfaceMethodDelimiter':
                 obj.signature = True
                 yield obj
-                map = {'docs': None, 'annotations': [], 'access_modifier': 'package-private', 'modifiers': [],
-                       'implements': [],
-                       'extends': None}
+                declaration = Declaration()
 
             elif state == 'MethodOpenBracketState':
                 yield obj
-                map = {'docs': None, 'annotations': [], 'access_modifier': 'package-private', 'modifiers': [],
-                       'implements': [],
-                       'extends': None}
+                declaration = Declaration()
 
             elif state == 'ClosedBracketState':
                 yield Delimiter(tokens[0].value)
@@ -184,8 +186,10 @@ class Parser:
                 yield Delimiter(tokens[0].value)
 
             elif state == 'DeadState':
-                map = {'docs': None, 'annotations': [], 'access_modifier': 'package-private', 'modifiers': [],
-                       'implements': [],
-                       'extends': None}
+                declaration = Declaration()
 
         return
+
+    @staticmethod
+    def trim_docstring(docs: str) -> str:
+        return docs[3:-2]

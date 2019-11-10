@@ -42,26 +42,20 @@ class ParserFiniteStateMachine:
                 if previous_state is not None and previous_state.type == 'InitialState':
                     i += 1
 
-                # if token.state not in ['OpenBracketState', 'ClosedBracketState', 'DelimiterState']:
-                #     i += 1
-
                 self._append_to_partition(self.state)
                 self._remove_states_until_delimiter()
-                # self._current_series = []
-                # self._partition = []  # or delete to latest delimiter
                 self.state = self.initial_state
             else:
                 i += 1
 
             previous_state = self.state
-            # on dead state discard tokens until delimiter
         self._partition.append((self.state.type, self._current_series))
 
     def step(self, event: TokenEvent):
         _previous_state = self.state
         self.state = self.state.on_event(event)
 
-        if _previous_state.separated or _previous_state.type != self.state.type:
+        if self.state.separated or _previous_state.type != self.state.type:
             self._append_to_partition(_previous_state)
 
         self._current_series.append(event.token)

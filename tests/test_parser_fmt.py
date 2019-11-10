@@ -23,6 +23,7 @@ class TestFMT(TestCase):
         fmt.process_tokens(partition)
 
         iterator = Parser.from_partition(fmt._partition)
+        next(iterator)  # imports
         self.assertEqual(next(iterator), DocumentedClass.create(None, [], None, [], 'E', None, [], [], []))
 
     def test_partition_for_class_2(self):
@@ -41,6 +42,7 @@ class TestFMT(TestCase):
         fmt.process_tokens(partition)
 
         iterator = Parser.from_partition(fmt._partition)
+        next(iterator)  # imports
         self.assertEqual(next(iterator),
                          DocumentedClass.create('doc2', ['@a', '@b'], 'public', ['static'], 'A', 'B', ['C', 'D'], [],
                                                 []))
@@ -72,7 +74,7 @@ class TestFMT(TestCase):
         fmt.process_tokens(partition)
 
         iterator = Parser.from_partition(fmt._partition)
-        self.assertEqual(next(iterator), DocumentedMethod.create(None, [], None, [], 'void', 'method',
+        self.assertEqual(next(iterator), DocumentedMethod.create(None, [], 'package-private', [], 'void', 'method',
                                                                  [['String', 'arg'], ['int', 'arg']]))
 
     def test_parser(self):
@@ -91,6 +93,7 @@ class TestFMT(TestCase):
 
         iterator = Parser.from_partition(fmt._partition)
 
+        next(iterator)  # imports
         self.assertEqual(next(iterator), DocumentedClass.create(None, [], None, [], 'X<T>', 'E', [], [], []))
         self.assertEqual(next(iterator), DocumentedMethod.create(None, [], 'package-private', [], 'void', 'method',
                                                                  [['String', 'arg'], ['int', 'arg']]))

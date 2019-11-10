@@ -42,8 +42,8 @@ class InitialState(State):
             elif lookahead[0] == '/':
                 return SkipState(CommentState())
 
-        elif event.character_met == '.':
-            return SkipState(InitialState(), activate=True, as_state='DelimiterState')
+        # elif event.character_met == '.':
+        #     return SkipState(InitialState(), activate=True, as_state='DelimiterState')
         elif event.character_met == ',':
             return SkipState(InitialState(), activate=True, as_state='DelimiterState')
         elif event.character_met == ';':
@@ -134,11 +134,11 @@ class NameState(State):
 
     def on_event(self, event: CharacterEvent) -> State:
         if event.character_met.isidentifier() or event.character_met.isnumeric() \
-                or event.character_met in ['<', '>']:
+                or event.character_met in ['<', '>', '.']:
             return self
 
-        if event.character_met == '.':
-            return SkipState(InitialState(), activate=True, as_state='DelimiterState')
+        # if event.character_met == '.':
+        #     return SkipState(InitialState(), activate=True, as_state='DelimiterState')
 
         if event.character_met == '(':  # todo can be space before parenthesis
             return ArgumentsParenthesisState()

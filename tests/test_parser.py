@@ -51,7 +51,7 @@ class TestParser(TestCase):
 @API(status = STABLE, since = "1.0")
 public class FilterResult extends AbstractFilterResult implements Result, Serializable {}'''
 
-        classes = Parser.parse_docs(test_string)
+        file = Parser.parse_structure(test_string)
 
         self.assertEqual(
             DocumentedClass.create('''/**
@@ -61,7 +61,7 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
  */''', ['@Component', '@API(status = STABLE, since = "1.0")'], 'public', [], 'FilterResult',
                                    'AbstractFilterResult', ['Result', 'Serializable'],
                                    [], []),
-            classes[0])
+            file.classes[0])
 
     def test_parse_docs_for_class_without_extends(self):
         test_string = '''/**
@@ -73,7 +73,7 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
 @API(status = STABLE, since = "1.0")
 public class FilterResult implements Result, Serializable {}'''
 
-        classes = Parser.parse_docs(test_string)
+        file = Parser.parse_structure(test_string)
 
         self.assertEqual(
             DocumentedClass.create('''/**
@@ -83,7 +83,7 @@ public class FilterResult implements Result, Serializable {}'''
  */''', ['@Component', '@API(status = STABLE, since = "1.0")'], 'public', [], 'FilterResult',
                                    None, ['Result', 'Serializable'],
                                    [], []),
-            classes[0])
+            file.classes[0])
 
     def test_parse_docs_for_class_without_implements(self):
         test_string = '''/**
@@ -95,7 +95,7 @@ public class FilterResult implements Result, Serializable {}'''
 @API(status = STABLE, since = "1.0")
 public class FilterResult extends AbstractFilterResult {}'''
 
-        classes = Parser.parse_docs(test_string)
+        file = Parser.parse_structure(test_string)
 
         self.assertEqual(
             DocumentedClass.create('''/**
@@ -105,7 +105,7 @@ public class FilterResult extends AbstractFilterResult {}'''
  */''', ['@Component', '@API(status = STABLE, since = "1.0")'], 'public', [], 'FilterResult',
                                    'AbstractFilterResult', [],
                                    [], []),
-            classes[0])
+            file.classes[0])
 
     def test_parse_docs_for_class_without_annotations(self):
         test_string = '''/**
@@ -115,7 +115,7 @@ public class FilterResult extends AbstractFilterResult {}'''
  */
 public class FilterResult extends AbstractFilterResult implements Result, Serializable {}'''
 
-        classes = Parser.parse_docs(test_string)
+        file = Parser.parse_structure(test_string)
 
         self.assertEqual(
             DocumentedClass.create('''/**
@@ -123,17 +123,17 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
  *
  * @since 1.0
  */''', [], 'public', [], 'FilterResult', 'AbstractFilterResult', ['Result', 'Serializable'], [], []),
-            classes[0])
+            file.classes[0])
 
     def test_parse_docs_for_class_without_javadoc(self):
         test_string = '''@Component public class FilterResult extends AbstractFilterResult implements Result, Serializable {}'''
 
-        classes = Parser.parse_docs(test_string)
+        file = Parser.parse_structure(test_string)
 
         self.assertEqual(
             DocumentedClass.create(None, ['@Component'], 'public', [], 'FilterResult', 'AbstractFilterResult',
                                    ['Result', 'Serializable'], [], []),
-            classes[0])
+            file.classes[0])
 
         def test_parse_docs_for_class_with_all_elements(self):
             test_string = '''/**
@@ -145,7 +145,7 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
     @API(status = STABLE, since = "1.0")
     public class FilterResult extends AbstractFilterResult implements Result, Serializable {}'''
 
-            classes = Parser.parse_docs(test_string)
+            file = Parser.parse_structure(test_string)
 
             self.assertEqual(
                 DocumentedClass.create('''/**
@@ -155,7 +155,7 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
      */''', ['@Component', '@API(status = STABLE, since = "1.0")'], 'public', [], 'FilterResult',
                                        'AbstractFilterResult', ['Result', 'Serializable'],
                                        [], []),
-                classes[0])
+                file.classes[0])
 
     def test_parse_docs_for_class_with_static_and_final(self):
         test_string = '''/**
@@ -167,7 +167,7 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
 @API(status = STABLE, since = "1.0")
 public static final class FilterResult extends AbstractFilterResult implements Result, Serializable {}'''
 
-        classes = Parser.parse_docs(test_string)
+        file = Parser.parse_structure(test_string)
 
         self.assertEqual(
             DocumentedClass.create('''/**
@@ -177,7 +177,7 @@ public static final class FilterResult extends AbstractFilterResult implements R
  */''', ['@Component', '@API(status = STABLE, since = "1.0")'], 'public', ['static', 'final'], 'FilterResult',
                                    'AbstractFilterResult', ['Result', 'Serializable'],
                                    [], []),
-            classes[0])
+            file.classes[0])
 
     def test_parse_docs_for_methods(self):
         test_string = '''
@@ -215,7 +215,7 @@ public final class A {
         return this.name;
     }
 }'''
-        classes = Parser.parse_docs(test_string)
+        file = Parser.parse_structure(test_string)
 
         self.assertEqual(
             DocumentedClass.create(None, [], 'public', ['final'],
@@ -235,14 +235,14 @@ public final class A {
                                     DocumentedMethod.create(None, ['@Bean', '@Override'], 'public', [], 'String',
                                                             'toString',
                                                             [])],
-                                   [DocumentedClass.create(None, [], 'package-private', ['static'], 'InnerClass', None,
+                                   [DocumentedClass.create(None, [], None, ['static'], 'InnerClass', None,
                                                            [], [
                                                                DocumentedMethod.create('''/**
          * Docs for innerClassMethod
          */''', [], 'public', [], 'void',
                                                                                        'innerClassMethod', [])],
                                                            [])]),
-            classes[0])
+            file.classes[0])
 
     def test_parse_docs(self):
         test_string = '''/**
@@ -277,7 +277,7 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
         return this.name;
     }
 }'''
-        classes = Parser.parse_docs(test_string)
+        file = Parser.parse_structure(test_string)
 
         self.assertEqual(
             DocumentedClass.create('''/**
@@ -295,12 +295,12 @@ public class FilterResult extends AbstractFilterResult implements Result, Serial
                                     DocumentedMethod.create('''/**
      * Overriding toString
      */''', ['@Override'], 'public', [], 'String', 'toString', [])],
-                                   [DocumentedClass.create(None, [], 'package-private', ['static'], 'InnerClass', None,
+                                   [DocumentedClass.create(None, [], None, ['static'], 'InnerClass', None,
                                                            [], [
                                                                DocumentedMethod.create(None, [], 'public', [], 'void',
                                                                                        'innerClassMethod', [])],
                                                            [])]),
-            classes[0])
+            file.classes[0])
 
     def test_parse_interface(self):
         test_string = '''
@@ -323,7 +323,7 @@ public interface FilterResult extends Result, Serializable {
     @Override
     String toString();
 }'''
-        classes = Parser.parse_docs(test_string)
+        file = Parser.parse_structure(test_string)
 
         self.assertEqual(
             DocumentedInterface.create(None, ['@API(status = STABLE, since = "1.0")'], 'public', [], 'FilterResult',
@@ -335,11 +335,11 @@ public interface FilterResult extends Result, Serializable {
      * @return an included {@code FilterResult} with the given reason
      */''', [], 'public', ['default'], 'FilterResult', 'included', [['String', 'reason']]),
                                         DocumentedMethod.create(None, ['@Override'], 'package-private', [], 'String', 'toString', [], signature=True)],
-                                       [DocumentedClass.create(None, [], 'package-private', ['static'], 'InnerClass',
+                                       [DocumentedClass.create(None, [], None, ['static'], 'InnerClass',
                                                                None,
                                                                [], [
                                                                    DocumentedMethod.create(None, [], 'public', [],
                                                                                            'void',
                                                                                            'innerClassMethod', [])],
                                                                [])]),
-            classes[0])
+            file.classes[0])
