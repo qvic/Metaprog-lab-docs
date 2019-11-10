@@ -13,10 +13,11 @@ from util.util import FileTreeNode, SourceFile, Helpers, DocumentedClass, Docume
 
 class Parser:
     ACCEPTED_EXTENSIONS = ['.java']
+    CODE_DIR = 'java'
 
     @staticmethod
     def parse(dir_path: str):
-        tree = Parser._generate_tree_from_list(Parser._list_files_hierarchy(dir_path))
+        tree = Parser._to_package_structure(Parser._generate_tree_from_list(Parser._list_files_hierarchy(dir_path)))
         print(tree)
         tree.traverse(lambda file: PageGenerator.create_file(file.file_path, Parser.parse_structure(file.read_all())))
         # tree.traverse(lambda file: Parser.parse_structure(file.read_all()))
@@ -53,6 +54,19 @@ class Parser:
                 stack.append(node)
 
         return root_node
+
+    @staticmethod
+    def _to_package_structure(tree: FileTreeNode):
+        queue = deque()
+        queue.append(tree)
+
+        while queue:
+            tree = queue.popleft()
+            if tree.directory == Parser.CODE_DIR:
+                return tree.children[0]
+
+            for subtree in tree.children:
+                queue.append(subtree)
 
     @staticmethod
     def parse_structure(file_contents):

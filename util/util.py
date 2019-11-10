@@ -1,4 +1,5 @@
 import os
+from collections import deque
 from typing import List
 
 
@@ -55,14 +56,19 @@ class FileTreeNode:
         return result
 
     def traverse(self, callback):
-        for file in self.files:
-            print('#' * 30)
-            print('reading', file.file_path)
-            print()
-            callback(file)
+        queue = deque()
+        queue.append(self)
 
-        for child in self.children:
-            child.traverse(callback)
+        while queue:
+            tree = queue.popleft()
+            for file in tree.files:
+                print('#' * 30)
+                print('reading', file.file_path)
+                print()
+                callback(file)
+
+            for subtree in tree.children:
+                queue.append(subtree)
 
 
 class SourceFile(Representable):
@@ -256,3 +262,16 @@ class DocumentedFile(Representable):
         self.classes = []
         self.imports = []
         self.package = None
+
+    def get_doc_import_path(self, class_name: str):
+        for import_path in self.imports:
+            splitted_path = import_path.split('.')
+            if splitted_path[-1] == class_name:
+                import_path = os.path.join(*splitted_path)
+                package_path = os.path.join(*self.package.split('.'))
+
+                if os.path.commonpath([import_path, package_path]) == '':
+                    return '#'
+
+                return os.path.relpath(import_path, package_path) + '.java.html'
+        return '#'
