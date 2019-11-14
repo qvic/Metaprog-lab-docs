@@ -18,3 +18,11 @@ class TestDocumentedFile(TestCase):
         file.imports = ['org.test.package.Kek', 'org.test.package.core.Class']
 
         self.assertEqual(file.get_doc_import_path('Class'), 'core/Class.java.html')
+
+    def test_get_import_path_disjoint(self):
+        file = DocumentedFile()
+        file.package = 'org.test.package'
+        file.imports = ['java.util.JavaClass', 'org.test.Class']
+
+        # or return link to online java doc
+        self.assertEqual(file.get_doc_import_path('JavaClass'), '#')

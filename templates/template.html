@@ -2,17 +2,32 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Package</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
-            integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
-            crossorigin="anonymous"></script>
+    <title>Docs</title>
+    <link rel="stylesheet"
+          href="file:///home/vic/Dropbox/projects/4kurs/metaprog/lab_docgen/templates/css/bootstrap.min.css">
+    <link rel="stylesheet" href="file:///home/vic/Dropbox/projects/4kurs/metaprog/lab_docgen/templates/css/styles.css">
+    <script src="file:///home/vic/Dropbox/projects/4kurs/metaprog/lab_docgen/templates/js/jquery-3.3.1.slim.min.js"></script>
+    <script src="file:///home/vic/Dropbox/projects/4kurs/metaprog/lab_docgen/templates/js/bootstrap.js"></script>
 </head>
 <body>
-<h3>file {{ file_path }}</h3>
-<h3>package {{ package_name }}</h3>
-<h1 class="display-1">Classes</h1>
-{{ classes }}
+<div class="d-flex" id="wrapper">
+    <div class="bg-light border-right" id="sidebar-wrapper">
+        <div class="sidebar-heading">Package structure</div>
+        <div class="list-group list-group-root card">
+            {{ package_structure }}
+        </div>
+    </div>
+
+    <div id="page-content-wrapper">
+
+        <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+            <h3>package <code>{{ package_name }}</code></h3>
+        </nav>
+
+        <div class="container-fluid">
+            <p>{{ classes }}</p>
+        </div>
+    </div>
+</div>
 </body>
 </html>

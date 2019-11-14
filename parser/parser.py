@@ -19,7 +19,7 @@ class Parser:
     def parse(dir_path: str):
         tree = Parser._to_package_structure(Parser._generate_tree_from_list(Parser._list_files_hierarchy(dir_path)))
         print(tree)
-        tree.traverse(lambda file: PageGenerator.create_file(file.file_path, Parser.parse_structure(file.read_all())))
+        tree.traverse(lambda file: PageGenerator.create_file(tree, file.file_path, Parser.parse_structure(file.read_all())))
         # tree.traverse(lambda file: Parser.parse_structure(file.read_all()))
 
     @staticmethod
