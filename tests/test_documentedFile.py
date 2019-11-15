@@ -25,4 +25,4 @@ class TestDocumentedFile(TestCase):
         file.imports = ['java.util.JavaClass', 'org.test.Class']
 
         # or return link to online java doc
-        self.assertEqual(file.get_doc_import_path('JavaClass'), '#')
+        self.assertEqual(file.get_doc_import_path('JavaClass'), None)

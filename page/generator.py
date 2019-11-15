@@ -1,5 +1,6 @@
 import os
 from collections import deque
+from pydoc import html
 
 from page.template import Template
 from util.util import DocumentedFile, FileTreeNode, DocumentedMethod, DocumentedClass, DocumentedInterface
@@ -29,30 +30,44 @@ class PageGenerator:
                         name=m.name,
                         return_type=m.return_type,
                         args=m.args,
-                        # todo other props
+                        annotations=m.annotations,
+                        access_modifier=m.access_modifier,
+                        modifiers=m.modifiers,
                         docs=m.docs)
                     for m in c.methods)
 
                 if isinstance(c, DocumentedClass):
                     # todo separate template
-                    rendered_impl_list = ''.join(
-                        '<a href={0}>{1}</a>'.format(documented_file.get_doc_import_path(v), v) for v in
-                        c.implements_list)
 
+                    impl_list = []
+                    for v in c.implements_list:
+                        import_path = documented_file.get_doc_import_path(v)
+                        a_class = 'disabled' if import_path is None else ''
+                        if import_path is None:
+                            import_path = ''
+                        impl_list.append('<a class="{0}" href="{1}">{2}</a>'.format(a_class, import_path, v))
+                    rendered_impl_list = ', '.join(impl_list)
+
+                    path = documented_file.get_doc_import_path(c.extends)
                     rendered_classes_list.append(
-                        templates['class'].render(name=c.name,
+                        templates['class'].render(name=html.escape(c.name),
                                                   docs=c.docs,
-                                                  extends=c.extends,
-                                                  extends_full=documented_file.get_doc_import_path(c.extends),
+                                                  extends='<a class="{0}" href="{1}">{2}</a>'.format(
+                                                      'disabled' if path is None else '', path, c.extends),
                                                   impl_list=rendered_impl_list,
                                                   methods=rendered_methods))
                 elif isinstance(c, DocumentedInterface):
-                    # todo separate template
-                    rendered_extends_list = ''.join(
-                        '<a href={0}>{1}</a>'.format(documented_file.get_doc_import_path(v), v) for v in c.extends_list)
+                    extends_list = []
+                    for v in c.extends_list:
+                        import_path = documented_file.get_doc_import_path(v)
+                        a_class = 'disabled' if import_path is None else ''
+                        if import_path is None:
+                            import_path = ''
+                        extends_list.append('<a class="{0}" href="{1}">{2}</a>'.format(a_class, import_path, v))
+                    rendered_extends_list = ', '.join(extends_list)
 
                     rendered_classes_list.append(
-                        templates['interface'].render(name=c.name,
+                        templates['interface'].render(name=html.escape(c.name),
                                                       docs=c.docs,
                                                       extends_list=rendered_extends_list,
                                                       methods=rendered_methods))
@@ -74,7 +89,8 @@ class PageGenerator:
         for file in tree.files:
             result += item_template.render(name=file.file_path.split('/')[-1].split('.')[0],
                                            href=os.path.relpath(os.path.join(*file.file_path.split('/')[4:]),
-                                                                os.path.join(*documented_file.package.split('.'))) + '.html')
+                                                                os.path.join(
+                                                                    *documented_file.package.split('.'))) + '.html')
 
         for child in tree.children:
             result += PageGenerator._render_tree(child, documented_file, package_template, item_template, id=id + 1)

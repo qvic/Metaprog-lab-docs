@@ -67,6 +67,8 @@ class InitialState(State):
             return SkipState(InitialState(), activate=True, skip_count=9, as_state='IdentifierState')
         elif event.is_start_of('enum'):
             return SkipState(InitialState(), activate=True, skip_count=4, as_state='IdentifierState')
+        elif event.is_start_of('new'):
+            return SkipState(InitialState(), activate=True, skip_count=3, as_state='IdentifierState')
 
         elif event.is_start_of('static'):
             return SkipState(InitialState(), activate=True, skip_count=6, as_state='ModifierState')

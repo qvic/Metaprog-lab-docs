@@ -13,7 +13,7 @@ body {
 }
 
 #sidebar-wrapper .list-group {
-    width: 30rem;
+    width: 20rem;
 }
 
 #page-content-wrapper {
@@ -40,31 +40,67 @@ body {
 }
 
 .list-group.list-group-root {
-  padding: 0;
-  overflow: hidden;
+    padding: 0;
+    overflow: hidden;
 }
 
 .list-group.list-group-root .list-group {
-  margin-bottom: 0;
+    margin-bottom: 0;
 }
 
 .list-group.list-group-root .list-group-item {
-  border-radius: 0;
-  border-width: 1px 0 0 0;
+    border-radius: 0;
+    border-width: 1px 0 0 0;
 }
 
 .list-group.list-group-root > .list-group-item:first-child {
-  border-top-width: 0;
+    border-top-width: 0;
 }
 
-/*.list-group.list-group-root > .list-group > .list-group-item {*/
-/*  padding-left: 30px;*/
-/*}*/
+.list-group.list-group-root > .list-group > .list-group-item {
+    padding-left: 30px;
+}
 
-/*.list-group.list-group-root > .list-group > .list-group > .list-group-item {*/
-/*  padding-left: 45px;*/
-/*}*/
+.list-group.list-group-root > .list-group > .list-group > .list-group-item {
+    padding-left: 45px;
+}
 
-.package-item, .package-item:hover {
-    color: #222;
+.list-group.list-group-root > .list-group > .list-group > .list-group > .list-group-item {
+    padding-left: 60px;
+}
+
+.list-group.list-group-root > .list-group > .list-group > .list-group > .list-group .list-group-item {
+    padding-left: 75px;
+}
+
+
+.package-item::before {
+    font-size: .8em;
+    content: "\25B6";
+    color: black;
+    display: inline-block;
+    margin-right: 6px;
+    transform: rotate(90deg);
+    transition: transform 50ms ease-in;
+}
+
+.arrow-down::before {
+    transform: rotate(0deg);
+}
+
+.nested {
+    display: none;
+}
+
+.active {
+    display: block;
+}
+
+a.disabled {
+  color: gray;
+  pointer-events: none;
+}
+
+.badge {
+    font-size: 1em;
 }

@@ -271,7 +271,7 @@ class DocumentedFile(Representable):
                 package_path = os.path.join(*self.package.split('.'))
 
                 if os.path.commonpath([import_path, package_path]) == '':
-                    return '#'
+                    return None
 
                 return os.path.relpath(import_path, package_path) + '.java.html'
-        return '#'
+        return None
