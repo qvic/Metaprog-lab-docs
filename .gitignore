@@ -109,3 +109,4 @@ venv.bak/
 # test data
 tests/testdata/
 tests/html/
+html/

@@ -58,6 +58,9 @@ class InitialState(State):
             return SkipState(InitialState(), activate=True, as_state='OpenParenthesisState')
         elif event.character_met == ')':
             return SkipState(InitialState(), activate=True, as_state='ClosedParenthesisState')
+
+        elif event.is_start_of('@interface'):
+            return SkipState(InitialState(), activate=True, skip_count=10, as_state='IdentifierState')
         elif event.character_met == '@':
             return AnnotationState()
 
@@ -135,12 +138,14 @@ class JavadocState(State):
 class NameState(State):
 
     def on_event(self, event: CharacterEvent) -> State:
-        if event.character_met.isidentifier() or event.character_met.isnumeric() \
-                or event.character_met in ['<', '>', '.']:
+        if event.character_met.isidentifier() or event.character_met.isnumeric():
             return self
 
-        # if event.character_met == '.':
-        #     return SkipState(InitialState(), activate=True, as_state='DelimiterState')
+        elif event.character_met == '.':
+            return self
+
+        elif event.character_met == '<':
+            return GenericState()
 
         if event.character_met == '(':  # todo can be space before parenthesis
             return ArgumentsParenthesisState()
@@ -151,11 +156,19 @@ class NameState(State):
 class MethodGenericState(State):
 
     def on_event(self, event: CharacterEvent) -> State:
-        if event.character_met == '>':
+        if event.lookahead(1) == '>':
+            return self
+
+        elif event.character_met == '<':
+            return self
+
+        elif event.character_met == '>':
             return SkipState(InitialState(), activate=True, as_state=self.type)
 
-        if event.character_met.isspace() or event.character_met.isidentifier() or event.character_met.isnumeric() \
-                or event.character_met in ['?']:
+        elif event.character_met.isspace() or \
+                event.character_met.isidentifier() or \
+                event.character_met.isnumeric() or \
+                event.character_met == '?':
             return self
 
         return InitialState().on_event(event)
@@ -165,13 +178,38 @@ class MethodGenericState(State):
         return 'ModifierState'
 
 
+class GenericState(State):
+
+    def on_event(self, event: CharacterEvent) -> State:
+        if event.lookahead(1) == '>':
+            return self
+
+        elif event.character_met == '<':
+            return self
+
+        elif event.character_met == '>':
+            return SkipState(InitialState(), activate=True, as_state=self.type)
+
+        elif event.character_met.isspace() or \
+                event.character_met.isidentifier() or \
+                event.character_met.isnumeric() or \
+                event.character_met == '?':
+            return self
+
+        return InitialState().on_event(event)
+
+    @property
+    def type(self) -> str:
+        return 'NameState'
+
+
 class ArgumentsParenthesisState(State):
 
     def on_event(self, event: CharacterEvent) -> State:
         if event.character_met == ')':
             return SkipState(InitialState(), activate=True, as_state=self.type)
         elif event.character_met.isidentifier() or event.character_met.isnumeric() \
-                or event.character_met in ['<', '>', ',', '[', ']', '?', '.'] or event.character_met.isspace():
+                or event.character_met in ['<', '>', ',', '[', ']', '?', '.', '@'] or event.character_met.isspace():
             return self
 
         return InitialState().on_event(event)

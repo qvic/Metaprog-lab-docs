@@ -70,6 +70,21 @@ class FileTreeNode:
             for subtree in tree.children:
                 queue.append(subtree)
 
+    def apply(self, function):
+        queue = deque()
+        queue.append(self)
+
+        while queue:
+            tree = queue.popleft()
+            for i, file in enumerate(tree.files):
+                print('#' * 30)
+                print('applying', file.file_path)
+                print()
+                tree.files[i] = function(file)
+
+            for subtree in tree.children:
+                queue.append(subtree)
+
 
 class SourceFile(Representable):
 
@@ -259,9 +274,13 @@ class Declaration(Representable):
 class DocumentedFile(Representable):
 
     def __init__(self):
+        self.file_path = None
         self.classes = []
         self.imports = []
         self.package = None
+
+    def get_file_name(self):
+        return self.file_path.split('/')[-1].split('.')[0]
 
     def get_doc_import_path(self, class_name: str):
         for import_path in self.imports:

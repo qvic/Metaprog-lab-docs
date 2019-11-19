@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>Docs</title>
-    <link rel="stylesheet"
-          href="file:///home/vic/Dropbox/projects/4kurs/metaprog/lab_docgen/templates/css/bootstrap.min.css">
-    <link rel="stylesheet" href="file:///home/vic/Dropbox/projects/4kurs/metaprog/lab_docgen/templates/css/styles.css">
+    <link rel="stylesheet" href="{{ rel_path_bootstrap }}">
+    <link rel="stylesheet" href="{{ rel_path_stylesheet }}">
 </head>
 <body>
 <div class="d-flex" id="wrapper">
     <div class="bg-light border-right" id="sidebar-wrapper">
-        <div class="sidebar-heading">Package structure</div>
-        <div class="list-group list-group-root card list-group-flush">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+            <h3>package structure</h3>
+        </nav>
+        <div class="list-group list-group-root list-group-flush">
             {{ package_structure }}
         </div>
     </div>

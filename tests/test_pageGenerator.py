@@ -1,6 +1,5 @@
 from unittest import TestCase
 
-from page.generator import PageGenerator
 from parser.parser import Parser
 
 

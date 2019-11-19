@@ -19,8 +19,10 @@ class Parser:
     def parse(dir_path: str):
         tree = Parser._to_package_structure(Parser._generate_tree_from_list(Parser._list_files_hierarchy(dir_path)))
         print(tree)
-        tree.traverse(lambda file: PageGenerator.create_file(tree, file.file_path, Parser.parse_structure(file.read_all())))
-        # tree.traverse(lambda file: Parser.parse_structure(file.read_all()))
+        tree.apply(lambda file: Parser.parse_source_file(file))
+
+        PageGenerator.copy_resources()
+        tree.traverse(lambda documented_file: PageGenerator.create_file(tree, documented_file))
 
     @staticmethod
     def _list_files_hierarchy(dir_path: str) -> List:
@@ -56,7 +58,7 @@ class Parser:
         return root_node
 
     @staticmethod
-    def _to_package_structure(tree: FileTreeNode):
+    def _to_package_structure(tree: FileTreeNode) -> FileTreeNode:
         queue = deque()
         queue.append(tree)
 
@@ -69,7 +71,14 @@ class Parser:
                 queue.append(subtree)
 
     @staticmethod
-    def parse_structure(file_contents):
+    def parse_source_file(source_file: SourceFile) -> DocumentedFile:
+        contents = source_file.read_all()
+        doc_file = Parser.parse_structure(contents)
+        doc_file.file_path = source_file.file_path
+        return doc_file
+
+    @staticmethod
+    def parse_structure(file_contents: str) -> DocumentedFile:
         fmt = FiniteStateMachine(InitialState())
         fmt.process_string(file_contents)
         partition = fmt.partition.exclude('WhitespaceState', 'InitialState')
@@ -206,4 +215,5 @@ class Parser:
 
     @staticmethod
     def trim_docstring(docs: str) -> str:
+        # todo parse documentation directives @param, @link
         return docs[3:-2]
