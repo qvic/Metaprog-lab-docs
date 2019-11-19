@@ -8,7 +8,7 @@ from page.generator import PageGenerator
 from parser.fmt import ParserFiniteStateMachine
 from parser.states import ParserInitialState
 from util.util import FileTreeNode, SourceFile, Helpers, DocumentedClass, DocumentedMethod, DocumentedInterface, \
-    Delimiter, PackageName, Imports, Declaration, DocumentedFile
+    Delimiter, PackageName, Imports, Declaration, DocumentedFile, DocumentedProperty, DocumentedEnum
 
 
 class Parser:
@@ -92,7 +92,9 @@ class Parser:
         file = DocumentedFile()
 
         for obj in iterator:
-            if isinstance(obj, DocumentedClass) or isinstance(obj, DocumentedInterface):
+            if isinstance(obj, DocumentedClass) or \
+                    isinstance(obj, DocumentedInterface) or \
+                    isinstance(obj, DocumentedEnum):
                 file.classes.append(obj)
 
                 if len(stack) > 0:
@@ -100,11 +102,21 @@ class Parser:
 
                 stack.append(obj)
 
+            elif isinstance(obj, DocumentedProperty):
+                if len(stack) == 0:
+                    raise Exception('Property is not in the class')
+
+                if isinstance(stack[-1], DocumentedClass) or isinstance(stack[-1], DocumentedEnum):
+                    stack[-1].properties.append(obj)
+
             elif isinstance(obj, DocumentedMethod):
                 if len(stack) == 0:
                     raise Exception('Method is not in the class')
 
-                if isinstance(stack[-1], DocumentedClass) or isinstance(stack[-1], DocumentedInterface):
+                if isinstance(stack[-1], DocumentedClass) or \
+                        isinstance(stack[-1], DocumentedInterface) or \
+                        isinstance(stack[-1], DocumentedEnum):
+
                     stack[-1].methods.append(obj)
                     if not obj.signature:
                         stack.append(obj)
@@ -153,6 +165,8 @@ class Parser:
             elif state == 'DeclarationWithModifiersState':
                 declaration.modifiers.extend([token.value for token in tokens])
 
+            # class
+
             elif state == 'ClassState':
                 yield imports
                 obj = DocumentedClass.from_declaration(declaration)
@@ -170,6 +184,27 @@ class Parser:
                 yield obj
                 declaration = Declaration()
 
+            # enum
+
+            elif state == 'EnumState':
+                yield imports
+                obj = DocumentedEnum.from_declaration(declaration)
+
+            elif state == 'EnumNameState':
+                obj.name = tokens[0].value
+
+            elif state == 'EnumImplementsListState':
+                obj.implements_list.extend([token.value for token in tokens[1:] if token.state != 'DelimiterState'])
+
+            elif state == 'EnumValuesListState':
+                obj.values.extend([token.value for token in tokens])
+
+            elif state == 'EnumOpenBracketState':
+                yield obj
+                declaration = Declaration()
+
+            # interface
+
             elif state == 'InterfaceState':
                 obj = DocumentedInterface.from_declaration(declaration)
 
@@ -183,14 +218,23 @@ class Parser:
                 yield obj
                 declaration = Declaration()
 
-            elif state == 'MethodReturnTypeState':
-                obj = DocumentedMethod.from_declaration(declaration)
-                obj.return_type = tokens[0].value
+            elif state == 'MethodOrPropertyTypeState':
+                declaration.type = tokens[0].value
 
-            elif state == 'MethodNameState':
-                obj.name = tokens[0].value
+            elif state == 'MethodOrPropertyNameState':
+                declaration.name = tokens[0].value
+
+            # property
+
+            elif state == 'PropertyDelimiter':
+                obj = DocumentedProperty.from_declaration(declaration)
+                yield obj
+                declaration = Declaration()
+
+            # method
 
             elif state == 'MethodArgumentsState':
+                obj = DocumentedMethod.from_declaration(declaration)
                 obj.args = DocumentedMethod.parse_method_args(tokens[0].value)
 
             elif state == 'InterfaceMethodDelimiter':

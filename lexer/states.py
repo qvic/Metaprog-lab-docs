@@ -42,8 +42,8 @@ class InitialState(State):
             elif lookahead[0] == '/':
                 return SkipState(CommentState())
 
-        # elif event.character_met == '.':
-        #     return SkipState(InitialState(), activate=True, as_state='DelimiterState')
+        elif event.character_met == '=':
+            return SkipState(InitialState(), activate=True, as_state='DelimiterState')
         elif event.character_met == ',':
             return SkipState(InitialState(), activate=True, as_state='DelimiterState')
         elif event.character_met == ';':
@@ -81,6 +81,9 @@ class InitialState(State):
             return SkipState(InitialState(), activate=True, skip_count=7, as_state='ModifierState')
         elif event.is_start_of('final'):
             return SkipState(InitialState(), activate=True, skip_count=5, as_state='ModifierState')
+        elif event.is_start_of('synchronized'):
+            return SkipState(InitialState(), activate=True, skip_count=12, as_state='ModifierState')
+
         elif event.character_met == '<':
             return MethodGenericState()
 
@@ -142,6 +145,9 @@ class NameState(State):
             return self
 
         elif event.character_met == '.':
+            return self
+
+        elif event.character_met in ['[', ']']:
             return self
 
         elif event.character_met == '<':

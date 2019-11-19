@@ -104,6 +104,36 @@ class SourceFile(Representable):
         return hash(self.file_path)
 
 
+class DocumentedEnum(Representable):
+
+    def __init__(self):
+        self.docs = None
+        self.annotations = []
+        self.access_modifier = None
+        self.modifiers = []
+        self.name = None
+        self.extends = None
+        self.implements_list = []
+        self.methods = []
+        self.inner_classes = []
+        self.properties = []
+        self.values = []
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
+    @staticmethod
+    def from_declaration(declaration: 'Declaration'):
+        self = DocumentedEnum()
+        self.docs = declaration.docs
+        self.annotations = declaration.annotations
+        self.access_modifier = declaration.access_modifier
+        self.modifiers = declaration.modifiers
+        return self
+
+
 class DocumentedClass(Representable):
 
     def __init__(self):
@@ -116,6 +146,7 @@ class DocumentedClass(Representable):
         self.implements_list = []
         self.methods = []
         self.inner_classes = []
+        self.properties = []
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -189,7 +220,6 @@ class DocumentedInterface(Representable):
 class DocumentedMethod(Representable):
 
     def __init__(self):
-        # todo static and final
         self.docs = None
         self.annotations = []
         self.access_modifier = 'package-private'
@@ -233,6 +263,35 @@ class DocumentedMethod(Representable):
         self.annotations = declaration.annotations
         self.access_modifier = declaration.access_modifier or self.access_modifier
         self.modifiers = declaration.modifiers
+        self.return_type = declaration.type
+        self.name = declaration.name
+        return self
+
+
+class DocumentedProperty(Representable):
+
+    def __init__(self):
+        self.docs = None
+        self.annotations = []
+        self.access_modifier = 'package-private'
+        self.modifiers = []
+        self.type = None
+        self.name = None
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
+    @staticmethod
+    def from_declaration(declaration: 'Declaration'):
+        self = DocumentedProperty()
+        self.docs = declaration.docs
+        self.annotations = declaration.annotations
+        self.access_modifier = declaration.access_modifier or self.access_modifier
+        self.modifiers = declaration.modifiers
+        self.name = declaration.name
+        self.type = declaration.type
         return self
 
 
@@ -269,6 +328,8 @@ class Declaration(Representable):
         self.annotations = []
         self.access_modifier = None
         self.modifiers = []
+        self.type = None
+        self.name = None
 
 
 class DocumentedFile(Representable):

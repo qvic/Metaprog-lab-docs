@@ -20,12 +20,16 @@ class ParserInitialState(State):
             return ClassState()
         elif event.token.state == 'IdentifierState' and event.token.value == 'interface':
             return InterfaceState()
+        elif event.token.state == 'IdentifierState' and event.token.value == '@interface':
+            return InterfaceState()
+        elif event.token.state == 'IdentifierState' and event.token.value == 'enum':
+            return EnumState()
         elif event.token.state == 'IdentifierState' and event.token.value == 'import':
             return ImportState()
         elif event.token.state == 'IdentifierState' and event.token.value == 'package':
             return PackageState()
         elif event.token.state == 'NameState':
-            return MethodReturnTypeState()
+            return MethodOrPropertyTypeState()
         elif event.token.state == 'ClosedBracketState':
             return ClosedBracketState()
         elif event.token.state == 'OpenBracketState':
@@ -39,7 +43,6 @@ class ParserInitialState(State):
 
 
 class ImportState(State):
-
     separated = True
 
     def on_event(self, event) -> 'State':
@@ -72,8 +75,12 @@ class DeclarationWithDocsState(State):
             return ClassState()
         elif event.token.state == 'IdentifierState' and event.token.value == 'interface':
             return InterfaceState()
+        elif event.token.state == 'IdentifierState' and event.token.value == '@interface':
+            return InterfaceState()
+        elif event.token.state == 'IdentifierState' and event.token.value == 'enum':
+            return EnumState()
         elif event.token.state == 'NameState':
-            return MethodReturnTypeState()
+            return MethodOrPropertyTypeState()
 
         return DeadState()
 
@@ -90,8 +97,12 @@ class DeclarationWithAnnotationsState(State):
             return ClassState()
         elif event.token.state == 'IdentifierState' and event.token.value == 'interface':
             return InterfaceState()
+        elif event.token.state == 'IdentifierState' and event.token.value == '@interface':
+            return InterfaceState()
+        elif event.token.state == 'IdentifierState' and event.token.value == 'enum':
+            return EnumState()
         elif event.token.state == 'NameState':
-            return MethodReturnTypeState()
+            return MethodOrPropertyTypeState()
 
         return DeadState()
 
@@ -104,8 +115,12 @@ class DeclarationWithAccessModifiersState(State):
             return ClassState()
         elif event.token.state == 'IdentifierState' and event.token.value == 'interface':
             return InterfaceState()
+        elif event.token.state == 'IdentifierState' and event.token.value == '@interface':
+            return InterfaceState()
+        elif event.token.state == 'IdentifierState' and event.token.value == 'enum':
+            return EnumState()
         elif event.token.state == 'NameState':
-            return MethodReturnTypeState()
+            return MethodOrPropertyTypeState()
 
         return DeadState()
 
@@ -118,8 +133,74 @@ class DeclarationWithModifiersState(State):
             return ClassState()
         elif event.token.state == 'IdentifierState' and event.token.value == 'interface':
             return InterfaceState()
+        elif event.token.state == 'IdentifierState' and event.token.value == '@interface':
+            return InterfaceState()
+        elif event.token.state == 'IdentifierState' and event.token.value == 'enum':
+            return EnumState()
         elif event.token.state == 'NameState':
-            return MethodReturnTypeState()
+            return MethodOrPropertyTypeState()
+
+        return DeadState()
+
+
+class EnumState(State):
+    def on_event(self, event) -> 'State':
+        if event.token.state == 'NameState':
+            return EnumNameState()
+
+        return DeadState()
+
+
+class EnumNameState(State):
+    def on_event(self, event) -> 'State':
+        if event.token.state == 'IdentifierState':
+            if event.token.value == 'implements':
+                if event.lookahead(1)[0].state == 'NameState':
+                    return SkipState(ClassImplementsListState())
+        elif event.token.state == 'OpenBracketState' and event.token.value == '{':
+            return EnumOpenBracketState()
+
+        return DeadState()
+
+
+class EnumImplementsState(State):
+    def on_event(self, event) -> 'State':
+        if event.token.state == 'IdentifierState' and event.token.value == 'implements':
+            if event.lookahead(1)[0].state == 'NameState':
+                return SkipState(EnumImplementsListState())
+        elif event.token.state == 'OpenBracketState' and event.token.value == '{':
+            return EnumOpenBracketState()
+
+        return DeadState()
+
+
+class EnumImplementsListState(State):
+    def on_event(self, event) -> 'State':
+        if event.token.state == 'DelimiterState' and event.token.value == ',':
+            if event.lookahead(1)[0].state == 'NameState':
+                return SkipState(self)
+        elif event.token.state == 'OpenBracketState' and event.token.value == '{':
+            return EnumOpenBracketState()
+
+        return DeadState()
+
+
+class EnumOpenBracketState(State):
+
+    def on_event(self, event) -> 'State':
+        if event.token.state == 'NameState':
+            return EnumValuesListState()
+
+        return DeadState()
+
+
+class EnumValuesListState(State):
+    def on_event(self, event) -> 'State':
+        if event.token.state == 'DelimiterState' and event.token.value == ',':
+            if event.lookahead(1)[0].state == 'NameState':
+                return SkipState(self)
+        elif event.token.state == 'DelimiterState' and event.token.value == ';':
+            return SkipState(ParserInitialState(), activate=True, as_state='EnumValuesDelimiter')
 
         return DeadState()
 
@@ -175,18 +256,21 @@ class ClassOpenBracketState(State):
         return ParserInitialState().on_event(event)
 
 
-class MethodReturnTypeState(State):
+class MethodOrPropertyTypeState(State):
     def on_event(self, event) -> 'State':
         if event.token.state == 'NameState':
-            return MethodNameState()
+            return MethodOrPropertyNameState()
 
         return DeadState()
 
 
-class MethodNameState(State):
+class MethodOrPropertyNameState(State):
     def on_event(self, event) -> 'State':
         if event.token.state == 'ArgumentsParenthesisState':
             return MethodArgumentsState()
+        elif event.token.state == 'DelimiterState':
+            if event.token.value in ['=', ';']:
+                return SkipState(ParserInitialState(), activate=True, as_state='PropertyDelimiter')
 
         return DeadState()
 

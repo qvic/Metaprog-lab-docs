@@ -3,7 +3,8 @@ from collections import deque
 from pydoc import html
 
 from page.template import Template
-from util.util import DocumentedFile, FileTreeNode, DocumentedMethod, DocumentedClass, DocumentedInterface
+from util.util import DocumentedFile, FileTreeNode, DocumentedMethod, DocumentedClass, DocumentedInterface, \
+    DocumentedEnum
 from distutils import dir_util
 
 
@@ -23,8 +24,10 @@ class PageGenerator:
             main_template = Template('templates/template.html')
             templates = {
                 'method': Template('templates/method_template.html'),
+                'property': Template('templates/property_template.html'),
                 'class': Template('templates/class_template.html'),
-                'interface': Template('templates/interface_template.html')
+                'interface': Template('templates/interface_template.html'),
+                'enum': Template('templates/enum_template.html'),
             }
 
             rendered_classes_list = []
@@ -32,14 +35,21 @@ class PageGenerator:
 
                 if isinstance(c, DocumentedClass):
                     # todo separate template
-
                     rendered_classes_list.append(
                         PageGenerator._render_class(c, documented_file,
                                                     PageGenerator._render_methods(c, templates['method']),
-                                                    templates['class'], templates['method']))
+                                                    PageGenerator._render_properties(c, templates['property']),
+                                                    templates['class'], templates['method'], templates['property']))
+
+                elif isinstance(c, DocumentedEnum):
+
+                    rendered_classes_list.append(
+                        PageGenerator._render_enum(c, documented_file,
+                                                   PageGenerator._render_methods(c, templates['method']),
+                                                   PageGenerator._render_properties(c, templates['property']),
+                                                   templates['enum'], templates['method'], templates['property']))
 
                 elif isinstance(c, DocumentedInterface):
-
                     rendered_classes_list.append(
                         PageGenerator._render_interface(c, documented_file,
                                                         PageGenerator._render_methods(c, templates['method']),
@@ -64,16 +74,28 @@ class PageGenerator:
     def _render_methods(c, template: Template) -> str:
         return ''.join(template.render(
             name=m.name,
-            return_type=m.return_type,
+            return_type=html.escape(m.return_type),
             args='<br>'.join(html.escape(' '.join(arg)) for arg in m.args),
-            annotations=m.annotations,
+            annotations=' '.join(m.annotations),
             access_modifier=m.access_modifier,
             modifiers=' '.join(html.escape(modifier) for modifier in m.modifiers),
             docs=m.docs) for m in c.methods)
 
     @staticmethod
-    def _render_class(c: DocumentedClass, documented_file: DocumentedFile, rendered_methods: str,
-                      template: Template, method_template: Template) -> str:
+    def _render_properties(c, template: Template) -> str:
+        return ''.join(template.render(
+            name=m.name,
+            type=html.escape(m.type),
+            annotations=' '.join(m.annotations),
+            access_modifier=m.access_modifier,
+            modifiers=' '.join(html.escape(modifier) for modifier in m.modifiers),
+            docs=m.docs) for m in c.properties)
+
+    @staticmethod
+    def _render_class(c: DocumentedClass, documented_file: DocumentedFile,
+                      rendered_methods: str,
+                      rendered_properties: str,
+                      template: Template, method_template: Template, property_template: Template) -> str:
         impl_list = []
         for v in c.implements_list:
             import_path = documented_file.get_doc_import_path(v)
@@ -89,13 +111,42 @@ class PageGenerator:
                                extends='<a class="{0}" href="{1}">{2}</a>'.format(
                                    'disabled' if path is None else '', path, c.extends),
                                impl_list=rendered_impl_list,
+                               # todo can be inner interface in class
                                inner_classes=''.join(PageGenerator._render_class(ic,
                                                                                  documented_file,
                                                                                  PageGenerator._render_methods(ic,
                                                                                                                method_template),
-                                                                                 template, method_template)
+                                                                                 PageGenerator._render_properties(ic,
+                                                                                                                  property_template),
+                                                                                 template, method_template,
+                                                                                 property_template)
                                                      for ic in c.inner_classes),
-                               methods=rendered_methods)
+                               methods=rendered_methods,
+                               properties=rendered_properties)
+
+    @staticmethod
+    def _render_enum(c: DocumentedEnum, documented_file: DocumentedFile,
+                     rendered_methods: str,
+                     rendered_properties: str,
+                     template: Template, method_template: Template, property_template: Template) -> str:
+
+        impl_list = []
+        for v in c.implements_list:
+            import_path = documented_file.get_doc_import_path(v)
+            a_class = 'disabled' if import_path is None else ''
+            if import_path is None:
+                import_path = ''
+            impl_list.append('<a class="{0}" href="{1}">{2}</a>'.format(a_class, import_path, v))
+        rendered_impl_list = ', '.join(impl_list)
+
+        path = documented_file.get_doc_import_path(c.extends)
+        return template.render(name=html.escape(c.name),
+                               docs=c.docs,
+                               impl_list=rendered_impl_list,
+                               inner_classes=None,
+                               methods=rendered_methods,
+                               values=' '.join(c.values),
+                               properties=rendered_properties)
 
     @staticmethod
     def _render_interface(c: DocumentedInterface, documented_file: DocumentedFile, rendered_methods: str,
