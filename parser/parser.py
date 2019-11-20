@@ -86,12 +86,14 @@ class Parser:
     def parse_structure(file_contents: str) -> DocumentedFile:
         fmt = FiniteStateMachine(InitialState())
         fmt.process_string(file_contents)
+
         partition = fmt.partition.exclude('WhitespaceState', 'InitialState')
 
-        fmt = ParserFiniteStateMachine(ParserInitialState())
-        fmt.process_tokens(partition)
+        parser_fmt = ParserFiniteStateMachine(ParserInitialState())
+        parser_fmt.process_tokens(partition)
 
-        iterator = Parser.from_partition(fmt._partition)
+        iterator = Parser.generate_data_objects(parser_fmt.partition)
+
         stack = deque()
 
         file = DocumentedFile()
@@ -154,7 +156,7 @@ class Parser:
         return file
 
     @staticmethod
-    def from_partition(token_states):
+    def generate_data_objects(token_states):
         obj = None
         imports = Imports()
         package = PackageName()
@@ -167,6 +169,7 @@ class Parser:
             elif state == 'PackageState':
                 package.name = tokens[1].value
                 yield package
+                package = PackageName()
 
             elif state == 'DeclarationWithDocsState':
                 declaration.docs = tokens[0].value
@@ -184,6 +187,7 @@ class Parser:
 
             elif state == 'ClassState':
                 yield imports
+                imports = Imports()
                 obj = DocumentedClass.from_declaration(declaration)
 
             elif state == 'ClassNameState':
@@ -203,6 +207,7 @@ class Parser:
 
             elif state == 'EnumState':
                 yield imports
+                imports = Imports()
                 obj = DocumentedEnum.from_declaration(declaration)
 
             elif state == 'EnumNameState':
@@ -221,6 +226,8 @@ class Parser:
             # interface
 
             elif state == 'InterfaceState':
+                yield imports
+                imports = Imports()
                 obj = DocumentedInterface.from_declaration(declaration)
 
             elif state == 'InterfaceNameState':
@@ -251,6 +258,11 @@ class Parser:
             elif state == 'MethodArgumentsState':
                 obj = DocumentedMethod.from_declaration(declaration)
                 obj.args = DocumentedMethod.parse_method_args(tokens[0].value)
+
+            elif state == 'MethodPostArgumentsState':
+                obj.post_args = tokens
+                if tokens[0].value == 'throws':
+                    obj.throws = [token.value for token in tokens[1:] if token.state != 'DelimiterState']
 
             elif state == 'InterfaceMethodDelimiter':
                 obj.signature = True

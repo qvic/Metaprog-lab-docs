@@ -236,6 +236,8 @@ class DocumentedMethod(Representable):
         self.name = None
         self.args = []
         self.signature = False
+        self.post_args = None
+        self.throws = []
 
     def __eq__(self, other):
         if type(other) is type(self):

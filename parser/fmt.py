@@ -10,7 +10,7 @@ class ParserFiniteStateMachine:
     def __init__(self, initial_state: State):
         self.initial_state = initial_state
         self.state = initial_state
-        self._partition = []
+        self.partition = []
         self._current_series = []
         self._last_initial_index = 0
 
@@ -35,7 +35,7 @@ class ParserFiniteStateMachine:
                 i += 1
 
             previous_state = self.state
-        self._partition.append((self.state.type, self._current_series))
+        self.partition.append((self.state.type, self._current_series))
 
     def step(self, event: 'TokenEvent'):
         _previous_state = self.state
@@ -47,16 +47,16 @@ class ParserFiniteStateMachine:
         self._current_series.append(event.token)
 
     def _append_to_partition(self, new_state):
-        self._partition.append((new_state.type, self._current_series))
+        self.partition.append((new_state.type, self._current_series))
         self._current_series = []
 
     def _remove_states_until_delimiter(self):
-        while len(self._partition) > 0 \
-                and len(self._partition[-1][1]) > 0 \
-                and self._partition[-1][1][0].state not in ['OpenBracketState',
+        while len(self.partition) > 0 \
+                and len(self.partition[-1][1]) > 0 \
+                and self.partition[-1][1][0].state not in ['OpenBracketState',
                                                             'ClosedBracketState',
                                                             'DelimiterState']:
-            self._partition.pop()
+            self.partition.pop()
 
 
 class TokenEvent:

@@ -22,7 +22,7 @@ class TestFMT(TestCase):
         fmt = ParserFiniteStateMachine(ParserInitialState())
         fmt.process_tokens(partition)
 
-        iterator = Parser.from_partition(fmt._partition)
+        iterator = Parser.generate_data_objects(fmt.partition)
         next(iterator)  # imports
         self.assertEqual(next(iterator), DocumentedClass.create(None, [], None, [], 'E', None, [], [], []))
 
@@ -41,7 +41,7 @@ class TestFMT(TestCase):
         fmt = ParserFiniteStateMachine(ParserInitialState())
         fmt.process_tokens(partition)
 
-        iterator = Parser.from_partition(fmt._partition)
+        iterator = Parser.generate_data_objects(fmt.partition)
         next(iterator)  # imports
         self.assertEqual(next(iterator),
                          DocumentedClass.create('doc2', ['@a', '@b'], 'public', ['static'], 'A', 'B', ['C', 'D'], [],
@@ -59,7 +59,8 @@ class TestFMT(TestCase):
         fmt = ParserFiniteStateMachine(ParserInitialState())
         fmt.process_tokens(partition)
 
-        iterator = Parser.from_partition(fmt._partition)
+        iterator = Parser.generate_data_objects(fmt.partition)
+        next(iterator)
         self.assertEqual(next(iterator), DocumentedInterface.create(None, [], None, [], 'X<T>', ['E', 'Y'], [], []))
 
     def test_partition_for_method(self):
@@ -73,7 +74,7 @@ class TestFMT(TestCase):
         fmt = ParserFiniteStateMachine(ParserInitialState())
         fmt.process_tokens(partition)
 
-        iterator = Parser.from_partition(fmt._partition)
+        iterator = Parser.generate_data_objects(fmt.partition)
         self.assertEqual(next(iterator), DocumentedMethod.create(None, [], 'package-private', [], 'void', 'method',
                                                                  [['String', 'arg'], ['int', 'arg']]))
 
@@ -91,7 +92,7 @@ class TestFMT(TestCase):
         fmt = ParserFiniteStateMachine(ParserInitialState())
         fmt.process_tokens(partition)
 
-        iterator = Parser.from_partition(fmt._partition)
+        iterator = Parser.generate_data_objects(fmt.partition)
 
         next(iterator)  # imports
         self.assertEqual(next(iterator), DocumentedClass.create(None, [], None, [], 'X<T>', 'E', [], [], []))

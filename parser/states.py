@@ -46,8 +46,16 @@ class ImportState(State):
     separated = True
 
     def on_event(self, event) -> 'State':
-        lookahead = event.lookahead(1)[0]
-        if event.token.state == 'NameState' and lookahead.state == 'DelimiterState' and lookahead.value == ';':
+        lookahead = event.lookahead(2)
+        token = event.token
+
+        if token.state == 'ModifierState' and token.value == 'static':
+            token = lookahead[0]
+            lookahead = lookahead[1]
+        else:
+            lookahead = lookahead[0]
+
+        if token.state == 'NameState' and lookahead.state == 'DelimiterState' and lookahead.value == ';':
             return SkipState(ParserInitialState(), activate=True, skip_count=2, as_state=self.type)
 
         return DeadState()
@@ -279,13 +287,28 @@ class MethodOrPropertyNameState(State):
 
 class MethodArgumentsState(State):
     def on_event(self, event) -> 'State':
-        if event.token.state == 'DelimiterState' and event.token.value == ';':
+        if event.token.state == 'ModifierState':
+            if event.token.value in ['throws', 'default']:
+                return MethodPostArgumentsState()
+
+        elif event.token.state == 'DelimiterState' and event.token.value == ';':
             return SkipState(ParserInitialState(), activate=True, as_state='InterfaceMethodDelimiter')
 
         elif event.token.state == 'OpenBracketState' and event.token.value == '{':
             return MethodOpenBracketState()
 
         return DeadState()
+
+
+class MethodPostArgumentsState(State):
+    def on_event(self, event) -> 'State':
+        if event.token.state == 'DelimiterState' and event.token.value == ';':
+            return SkipState(ParserInitialState(), activate=True, as_state='InterfaceMethodDelimiter')
+
+        elif event.token.state == 'OpenBracketState' and event.token.value == '{':
+            return MethodOpenBracketState()
+
+        return self
 
 
 class InterfaceState(State):

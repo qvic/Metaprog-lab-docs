@@ -73,6 +73,10 @@ class InitialState(State):
             return SkipState(InitialState(), activate=True, skip_count=4, as_state='IdentifierState')
         elif event.is_start_of('new'):
             return SkipState(InitialState(), activate=True, skip_count=3, as_state='IdentifierState')
+        elif event.is_start_of('default'):
+            return SkipState(InitialState(), activate=True, skip_count=7, as_state='ModifierState')
+        elif event.is_start_of('throws'):
+            return SkipState(InitialState(), activate=True, skip_count=6, as_state='ModifierState')
 
         elif event.is_start_of('static'):
             return SkipState(InitialState(), activate=True, skip_count=6, as_state='ModifierState')
@@ -225,7 +229,7 @@ class ArgumentsParenthesisState(State):
 class AnnotationState(State):
 
     def on_event(self, event: CharacterEvent) -> State:
-        if event.character_met.isalpha():
+        if event.character_met.isalpha() or event.character_met in ['.']:
             return self
 
         if event.character_met == '(':
