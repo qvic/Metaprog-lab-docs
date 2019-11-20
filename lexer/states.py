@@ -31,6 +31,7 @@ class WhitespaceState(State):
 class InitialState(State):
 
     def on_event(self, event: CharacterEvent) -> State:
+        # todo string literals
         if event.character_met == '/':
             lookahead = event.lookahead(2)
 

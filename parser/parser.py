@@ -8,7 +8,7 @@ from page.generator import PageGenerator
 from parser.fmt import ParserFiniteStateMachine
 from parser.states import ParserInitialState
 from util.util import FileTreeNode, SourceFile, Helpers, DocumentedClass, DocumentedMethod, DocumentedInterface, \
-    Delimiter, PackageName, Imports, Declaration, DocumentedFile, DocumentedProperty, DocumentedEnum
+    Delimiter, PackageName, Imports, Declaration, DocumentedFile, DocumentedProperty, DocumentedEnum, EnumValue
 
 
 class Parser:
@@ -109,22 +109,32 @@ class Parser:
 
             elif isinstance(obj, DocumentedProperty):
                 if len(stack) == 0:
-                    raise Exception('Property is not in the class')
+                    print('Can\'t assign property', obj, 'anywhere')
+                    continue
 
                 if isinstance(stack[-1], DocumentedClass) or isinstance(stack[-1], DocumentedEnum):
                     stack[-1].properties.append(obj)
 
             elif isinstance(obj, DocumentedMethod):
                 if len(stack) == 0:
-                    raise Exception('Method is not in the class')
+                    print('Can\'t assign method', obj, 'anywhere')
+                    continue
 
                 if isinstance(stack[-1], DocumentedClass) or \
                         isinstance(stack[-1], DocumentedInterface) or \
                         isinstance(stack[-1], DocumentedEnum):
-
                     stack[-1].methods.append(obj)
-                    if not obj.signature:
-                        stack.append(obj)
+
+                if not obj.signature:
+                    stack.append(obj)
+
+            elif isinstance(obj, EnumValue):
+                if len(stack) == 0:
+                    print('Can\'t assign enum value', obj, 'anywhere')
+                    continue
+
+                if isinstance(stack[-1], DocumentedEnum):
+                    stack[-1].values.append(obj.value)
 
             elif isinstance(obj, Delimiter) and obj.char == '}':
                 try:
@@ -202,7 +212,7 @@ class Parser:
                 obj.implements_list.extend([token.value for token in tokens[1:] if token.state != 'DelimiterState'])
 
             elif state == 'EnumValuesListState':
-                obj.values.extend([token.value for token in tokens])
+                yield from (EnumValue(token.value) for token in tokens)
 
             elif state == 'EnumOpenBracketState':
                 yield obj

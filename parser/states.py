@@ -199,6 +199,8 @@ class EnumValuesListState(State):
         if event.token.state == 'DelimiterState' and event.token.value == ',':
             if event.lookahead(1)[0].state == 'NameState':
                 return SkipState(self)
+        elif event.token.state == 'OpenBracketState' and event.token.value == '{':
+            return OpenBracketState()
         elif event.token.state == 'DelimiterState' and event.token.value == ';':
             return SkipState(ParserInitialState(), activate=True, as_state='EnumValuesDelimiter')
 
@@ -319,13 +321,38 @@ class InterfaceExtendsListState(State):
 
 class MethodOpenBracketState(State):
     def on_event(self, event) -> 'State':
-        return ParserInitialState().on_event(event)
+        if event.token.state == 'ClosedBracketState':
+            return ClosedBracketState()
+
+        return MethodBodyState()
+
+
+class MethodBodyState(State):
+
+    def __init__(self):
+        self.stack = deque()
+
+    # todo another way
+
+    def on_event(self, event) -> 'State':
+        if event.token.state == 'OpenBracketState':
+            self.stack.append('{')
+        elif event.token.state == 'ClosedBracketState':
+            if len(self.stack) == 0:
+                return ClosedBracketState()
+
+            self.stack.pop()
+
+        return self
 
 
 class ClosedBracketState(State):
     separated = True
 
     def on_event(self, event) -> 'State':
+        if event.token.state == 'DelimiterState' and event.token.value == ',':
+            if event.lookahead(1)[0].state == 'NameState':
+                return SkipState(EnumValuesListState())
         return ParserInitialState().on_event(event)
 
 

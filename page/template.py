@@ -1,6 +1,10 @@
 import re
 
 
+class TemplateRegistry:
+    pass
+
+
 class Template:
 
     def __init__(self, template_path):

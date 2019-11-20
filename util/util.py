@@ -134,6 +134,12 @@ class DocumentedEnum(Representable):
         return self
 
 
+class EnumValue(Representable):
+
+    def __init__(self, value):
+        self.value = value
+
+
 class DocumentedClass(Representable):
 
     def __init__(self):
