@@ -125,7 +125,7 @@ class DocumentedEnum(Representable):
         return False
 
     @staticmethod
-    def from_declaration(declaration: 'Declaration'):
+    def from_declaration(declaration: 'Declaration') -> 'DocumentedEnum':
         self = DocumentedEnum()
         self.docs = declaration.docs
         self.annotations = declaration.annotations
@@ -154,7 +154,8 @@ class DocumentedClass(Representable):
         return False
 
     @staticmethod
-    def create(docs, annotations, access_modifier, modifiers, name, extends, implements_list, methods, inner_classes):
+    def create(docs, annotations, access_modifier, modifiers, name, extends, implements_list, methods,
+               inner_classes) -> 'DocumentedClass':
         self = DocumentedClass()
         self.docs = docs
         self.annotations = annotations
@@ -168,7 +169,7 @@ class DocumentedClass(Representable):
         return self
 
     @staticmethod
-    def from_declaration(declaration: 'Declaration'):
+    def from_declaration(declaration: 'Declaration') -> 'DocumentedClass':
         self = DocumentedClass()
         self.docs = declaration.docs
         self.annotations = declaration.annotations
@@ -195,7 +196,8 @@ class DocumentedInterface(Representable):
         return False
 
     @staticmethod
-    def create(docs, annotations, access_modifier, modifiers, name, extends_list, methods, inner_classes):
+    def create(docs, annotations, access_modifier, modifiers, name, extends_list, methods,
+               inner_classes) -> 'DocumentedInterface':
         self = DocumentedInterface()
         self.docs = docs
         self.annotations = annotations
@@ -208,7 +210,7 @@ class DocumentedInterface(Representable):
         return self
 
     @staticmethod
-    def from_declaration(declaration: 'Declaration'):
+    def from_declaration(declaration: 'Declaration') -> 'DocumentedInterface':
         self = DocumentedInterface()
         self.docs = declaration.docs
         self.annotations = declaration.annotations
@@ -244,7 +246,8 @@ class DocumentedMethod(Representable):
         return [arg.split() for arg in args_with_types]
 
     @staticmethod
-    def create(docs, annotations, access_modifier, modifiers, return_type, name, args, signature=False):
+    def create(docs, annotations, access_modifier, modifiers, return_type, name, args,
+               signature=False) -> 'DocumentedMethod':
         self = DocumentedMethod()
         self.docs = docs
         self.annotations = annotations
@@ -257,7 +260,7 @@ class DocumentedMethod(Representable):
         return self
 
     @staticmethod
-    def from_declaration(declaration: 'Declaration'):
+    def from_declaration(declaration: 'Declaration') -> 'DocumentedMethod':
         self = DocumentedMethod()
         self.docs = declaration.docs
         self.annotations = declaration.annotations
@@ -284,7 +287,7 @@ class DocumentedProperty(Representable):
         return False
 
     @staticmethod
-    def from_declaration(declaration: 'Declaration'):
+    def from_declaration(declaration: 'Declaration') -> 'DocumentedProperty':
         self = DocumentedProperty()
         self.docs = declaration.docs
         self.annotations = declaration.annotations
@@ -292,6 +295,17 @@ class DocumentedProperty(Representable):
         self.modifiers = declaration.modifiers
         self.name = declaration.name
         self.type = declaration.type
+        return self
+
+    @staticmethod
+    def create(docs, annotations, access_modifier, modifiers, type, name) -> 'DocumentedProperty':
+        self = DocumentedProperty()
+        self.docs = docs
+        self.annotations = annotations
+        self.access_modifier = access_modifier
+        self.modifiers = modifiers
+        self.type = type
+        self.name = name
         return self
 
 

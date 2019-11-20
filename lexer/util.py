@@ -1,4 +1,5 @@
 import itertools
+from typing import Optional
 
 from util.util import Representable
 
@@ -47,24 +48,24 @@ class LexerPartition(Representable):
     def _generate_string_partition(partition_list):
         return tuple(Token(state_type, ''.join(string_value)) for state_type, string_value in partition_list)
 
-    def exclude(self, *args) -> 'LexerPartition':
+    def exclude(self, *args: str) -> 'LexerPartition':
         partition = LexerPartition()
         partition.sequence = tuple(item for item in self.sequence if all(arg != item.state for arg in args))
         return partition
 
-    def state_at(self, index):
+    def state_at(self, index) -> Optional[str]:
         try:
             return self.sequence[index].state
         except IndexError:
             return None
 
-    def value_at(self, index):
+    def value_at(self, index) -> Optional[str]:
         try:
             return self.sequence[index].value
         except IndexError:
             return None
 
-    def token_at(self, index):
+    def token_at(self, index) -> Optional[Token]:
         try:
             return self.sequence[index]
         except IndexError:

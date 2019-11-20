@@ -5,7 +5,7 @@ from lexer.util import Token, LexerPartition
 from parser.fmt import ParserFiniteStateMachine
 from parser.parser import Parser
 from parser.states import ParserInitialState
-from util.util import DocumentedClass, DocumentedInterface, DocumentedMethod, Delimiter
+from util.util import DocumentedClass, DocumentedInterface, DocumentedMethod, Delimiter, DocumentedProperty
 
 
 class TestFMT(TestCase):
@@ -95,5 +95,6 @@ class TestFMT(TestCase):
 
         next(iterator)  # imports
         self.assertEqual(next(iterator), DocumentedClass.create(None, [], None, [], 'X<T>', 'E', [], [], []))
+        self.assertEqual(next(iterator), DocumentedProperty.create(None, [], 'package-private', [], 'String', 'property'))
         self.assertEqual(next(iterator), DocumentedMethod.create(None, [], 'package-private', [], 'void', 'method',
                                                                  [['String', 'arg'], ['int', 'arg']]))

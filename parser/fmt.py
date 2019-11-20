@@ -5,20 +5,6 @@ from lexer.states import State
 from lexer.util import LexerPartition, Token
 
 
-class TokenEvent:
-
-    def __init__(self, token: Token, lookahead: List[Token], end=False):
-        self.token = token
-        self.end = end
-        self._lookahead = lookahead
-
-    def __repr__(self) -> str:
-        return 'TokenEvent[{0}]'.format(repr(self.token))
-
-    def lookahead(self, n) -> List[Token]:
-        return self._lookahead[:n]
-
-
 class ParserFiniteStateMachine:
 
     def __init__(self, initial_state: State):
@@ -51,7 +37,7 @@ class ParserFiniteStateMachine:
             previous_state = self.state
         self._partition.append((self.state.type, self._current_series))
 
-    def step(self, event: TokenEvent):
+    def step(self, event: 'TokenEvent'):
         _previous_state = self.state
         self.state = self.state.on_event(event)
 
@@ -71,3 +57,17 @@ class ParserFiniteStateMachine:
                                                             'ClosedBracketState',
                                                             'DelimiterState']:
             self._partition.pop()
+
+
+class TokenEvent:
+
+    def __init__(self, token: Token, lookahead: List[Token], end=False):
+        self.token = token
+        self.end = end
+        self._lookahead = lookahead
+
+    def __repr__(self) -> str:
+        return 'TokenEvent[{0}]'.format(repr(self.token))
+
+    def lookahead(self, n) -> List[Token]:
+        return self._lookahead[:n]

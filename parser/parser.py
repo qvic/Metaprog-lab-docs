@@ -13,15 +13,20 @@ from util.util import FileTreeNode, SourceFile, Helpers, DocumentedClass, Docume
 
 class Parser:
     ACCEPTED_EXTENSIONS = ['.java']
-    CODE_DIR = 'java'
+    SCAN_DIR = 'java'
 
     @staticmethod
     def parse(dir_path: str):
-        tree = Parser._to_package_structure(Parser._generate_tree_from_list(Parser._list_files_hierarchy(dir_path)))
+        tree = Parser._to_package_structure(
+            Parser._generate_tree_from_list(
+                Parser._list_files_hierarchy(dir_path)))
+
         print(tree)
+
         tree.apply(lambda file: Parser.parse_source_file(file))
 
         PageGenerator.copy_resources()
+
         tree.traverse(lambda documented_file: PageGenerator.create_file(tree, documented_file))
 
     @staticmethod
@@ -64,7 +69,7 @@ class Parser:
 
         while queue:
             tree = queue.popleft()
-            if tree.directory == Parser.CODE_DIR:
+            if tree.directory == Parser.SCAN_DIR:
                 return tree.children[0]
 
             for subtree in tree.children:
@@ -128,7 +133,7 @@ class Parser:
                     print("Unexpected closing bracket")
 
             elif isinstance(obj, Delimiter) and obj.char == '{':
-                stack.append('Block')
+                stack.append(None)
 
             elif isinstance(obj, PackageName):
                 file.package = obj.name
@@ -256,8 +261,3 @@ class Parser:
                 declaration = Declaration()
 
         return
-
-    @staticmethod
-    def trim_docstring(docs: str) -> str:
-        # todo parse documentation directives @param, @link
-        return docs[3:-2]

@@ -319,28 +319,7 @@ class InterfaceExtendsListState(State):
 
 class MethodOpenBracketState(State):
     def on_event(self, event) -> 'State':
-        if event.token.state == 'ClosedBracketState':
-            return ClosedBracketState()
-        return MethodBodyState()
-
-
-class MethodBodyState(State):
-
-    def __init__(self):
-        self.stack = deque()
-
-    # todo another way
-
-    def on_event(self, event) -> 'State':
-        if event.token.state == 'OpenBracketState':
-            self.stack.append('{')
-        elif event.token.state == 'ClosedBracketState':
-            if len(self.stack) == 0:
-                return ClosedBracketState()
-
-            self.stack.pop()
-
-        return self
+        return ParserInitialState().on_event(event)
 
 
 class ClosedBracketState(State):
