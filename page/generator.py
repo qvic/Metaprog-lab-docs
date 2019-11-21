@@ -185,7 +185,7 @@ class PageGenerator:
                                                           class_name or '')
 
     @staticmethod
-    def create_index_page(tree: FileTreeNode, file_list: List[DocumentedFile]):
+    def create_index_page(tree: FileTreeNode, file_list: List[DocumentedFile], project_name):
         file_path = os.path.join(PageGenerator.DIR, 'index.html')
 
         rendered_package_structure = PageGenerator._render_tree(tree, None,
@@ -198,7 +198,8 @@ class PageGenerator:
             file.write(PageGenerator.templates.get('index').render(
                 package_structure=rendered_package_structure,
                 generation_date=time.strftime("%Y-%m-%d %H:%M:%S"),
-                alphabetical_index=rendered_alphabetical_index
+                alphabetical_index=rendered_alphabetical_index,
+                project_name=project_name
             ))
 
     @staticmethod

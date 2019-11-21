@@ -16,7 +16,10 @@ class Parser:
     SCAN_DIR = 'java'
 
     @staticmethod
-    def parse(dir_path: str, verbose: bool = False):
+    def parse(dir_path: str, project_name: str = None, verbose: bool = False):
+        if project_name is None:
+            project_name = dir_path
+
         tree = Parser._to_package_structure(
             Parser._generate_tree_from_list(
                 Parser._list_files_hierarchy(dir_path)))
@@ -33,7 +36,7 @@ class Parser:
         file_list = []
         tree.traverse(lambda documented_file: file_list.append(documented_file))
 
-        PageGenerator.create_index_page(tree, file_list)
+        PageGenerator.create_index_page(tree, file_list, project_name)
 
         tree.traverse(lambda documented_file: PageGenerator.create_file(tree, documented_file, file_list))
 
