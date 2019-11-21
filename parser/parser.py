@@ -81,10 +81,14 @@ class Parser:
         while queue:
             tree = queue.popleft()
             if tree.directory == Parser.SCAN_DIR:
+                if len(tree.children) == 0:
+                    raise Exception('Empty java/ directory.')
                 return tree.children[0]
 
             for subtree in tree.children:
                 queue.append(subtree)
+
+        raise Exception('No java directory found.')
 
     @staticmethod
     def parse_source_file(source_file: SourceFile) -> DocumentedFile:
