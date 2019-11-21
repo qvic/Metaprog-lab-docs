@@ -62,24 +62,20 @@ class FileTreeNode:
         while queue:
             tree = queue.popleft()
             for file in tree.files:
-                print('#' * 30)
-                print('reading', file.file_path)
-                print()
                 callback(file)
 
             for subtree in tree.children:
                 queue.append(subtree)
 
-    def apply(self, function):
+    def apply(self, function, verbose):
         queue = deque()
         queue.append(self)
 
         while queue:
             tree = queue.popleft()
             for i, file in enumerate(tree.files):
-                print('#' * 30)
-                print('applying', file.file_path)
-                print()
+                if verbose:
+                    print('reading', file.file_path)
                 tree.files[i] = function(file)
 
             for subtree in tree.children:
@@ -365,15 +361,24 @@ class DocumentedFile(Representable):
     def get_file_name(self):
         return self.file_path.split('/')[-1].split('.')[0]
 
-    def get_doc_import_path(self, class_name: str):
+    def get_package_path(self):
+        return self.file_path[self.file_path.find('java') + 5:]
+
+    def get_import_name(self):
+        return self.package + '.' + self.get_file_name()
+
+    def get_doc_import_path(self, class_name: str, file_list):
+        import_names = map(lambda f: f.get_import_name(), file_list)
         for import_path in self.imports:
+
             splitted_path = import_path.split('.')
             if splitted_path[-1] == class_name:
+
+                if import_path not in import_names:
+                    return None
+
                 import_path = os.path.join(*splitted_path)
                 package_path = os.path.join(*self.package.split('.'))
-
-                if os.path.commonpath([import_path, package_path]) == '':
-                    return None
 
                 return os.path.relpath(import_path, package_path) + '.java.html'
         return None

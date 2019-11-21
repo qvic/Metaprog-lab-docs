@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from lexer.util import CharacterEvent
 
 
-# todo metaclass singleton
 class State(ABC):
     separated = False
 

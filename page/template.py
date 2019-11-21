@@ -15,6 +15,7 @@ class TemplateRegistry:
             'enum': FileTemplate('templates/enum_template.html'),
             'list_package': FileTemplate('templates/list_package_template.html'),
             'list_item': FileTemplate('templates/list_item_template.html'),
+            'index': FileTemplate('templates/index_template.html')
         }
 
     def get(self, obj_name: str) -> 'FileTemplate':

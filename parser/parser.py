@@ -16,18 +16,26 @@ class Parser:
     SCAN_DIR = 'java'
 
     @staticmethod
-    def parse(dir_path: str):
+    def parse(dir_path: str, verbose: bool = False):
         tree = Parser._to_package_structure(
             Parser._generate_tree_from_list(
                 Parser._list_files_hierarchy(dir_path)))
 
-        print(tree)
+        if verbose:
+            print("Project file structure:")
+            print(tree)
+            print()
 
-        tree.apply(lambda file: Parser.parse_source_file(file))
+        tree.apply(lambda file: Parser.parse_source_file(file), verbose)
 
         PageGenerator.copy_resources()
 
-        tree.traverse(lambda documented_file: PageGenerator.create_file(tree, documented_file))
+        file_list = []
+        tree.traverse(lambda documented_file: file_list.append(documented_file))
+
+        PageGenerator.create_index_page(tree, file_list)
+
+        tree.traverse(lambda documented_file: PageGenerator.create_file(tree, documented_file, file_list))
 
     @staticmethod
     def _list_files_hierarchy(dir_path: str) -> List:
@@ -151,7 +159,7 @@ class Parser:
                 file.package = obj.name
 
             elif isinstance(obj, Imports):
-                file.imports = obj.names
+                file.imports.extend(obj.names)
 
         return file
 

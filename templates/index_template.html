@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="static/css/bootstrap.css">
+    <link rel="stylesheet" href="static/css/styles.css">
+</head>
+<body>
+<div class="container my-5">
+    <h1 class="display-1">Metaprog-lab-docs <code>v1.0</code></h1>
+    <h1 class="display-4">Documentation generator for Java</h1>
+    <hr>
+    <h1 class="display-4">Project {{ project_name }}</h1>
+    <p>Generation date: <code>{{ generation_date }}</code></p>
+    <hr>
+    <h1 class="display-4">Project structure</h1>
+    <div class="list-group list-group-root">
+        {{ package_structure }}
+    </div>
+    <hr>
+    <h1 class="display-4">Alphabetical class index</h1>
+    <div class="list-group">
+        {{ alphabetical_index }}
+    </div>
+</div>
+
+<script>
+    const toggler = document.getElementsByClassName("package-item");
+
+    for (let i = 0; i < toggler.length; i++) {
+        toggler[i].addEventListener("click", function () {
+            this.parentElement.querySelector(".nested").classList.toggle("active");
+            this.classList.toggle("arrow-down");
+        });
+    }
+</script>
+</body>
+</html>

@@ -6,7 +6,6 @@ from parser.fmt import TokenEvent
 
 class ParserInitialState(State):
 
-    # todo enum!
     def on_event(self, event: TokenEvent) -> 'State':
         if event.token.state == 'JavadocState':
             return DeclarationWithDocsState()
@@ -354,8 +353,6 @@ class MethodBodyState(State):
 
     def __init__(self):
         self.stack = deque()
-
-    # todo another way
 
     def on_event(self, event) -> 'State':
         if event.token.state == 'OpenBracketState':

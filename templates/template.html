@@ -20,11 +20,13 @@
     <div id="page-content-wrapper">
 
         <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
-            <h3>package <code>{{ package_name }}</code></h3>
+            <h3 class="flex-grow-1">package <code>{{ package_name }}</code></h3>
+            <a class="h3 flex-grow-0" href="{{ index_page_path }}">index page</a>
         </nav>
 
         <div class="container-fluid">
-            <p>{{ classes }}</p>
+            <pre></pre>
+            <p class="mt-5">{{ classes }}</p>
         </div>
     </div>
 </div>
