@@ -1,5 +1,5 @@
-<h1 class="display-4">enum {{ name }}</h1>
-<h3>implements {{ impl_list }}</h3>
+<h1 class="display-4"><span class="text-black-50">enum</span> {{ name }}</h1>
+<h3><span class="text-black-50">implements</span> {{ impl_list }}</h3>
 <pre>{{ docs }}</pre>
 
 <h1 class="display-4">values:</h1>
@@ -14,6 +14,8 @@
 {{ methods }}
 <hr>
 
-<h1 class="display-4">inner classes:</h1>
-<div class="pl-5 inner-classes">{{ inner_classes }}</div>
+<div>
+    <h1 class="display-4 package-item">inner classes:</h1>
+    <div class="pl-5 inner-classes nested">{{ inner_classes }}</div>
+</div>
 <hr>
