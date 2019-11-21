@@ -1,14 +1,13 @@
 import collections
 import os
 import time
-from collections import deque
+from distutils import dir_util
 from pydoc import html
 from typing import Optional, List
 
 from page.template import FileTemplate, TemplateRegistry
-from util.util import DocumentedFile, FileTreeNode, DocumentedMethod, DocumentedClass, DocumentedInterface, \
+from util.util import DocumentedFile, FileTreeNode, DocumentedClass, DocumentedInterface, \
     DocumentedEnum
-from distutils import dir_util
 
 
 class PageGenerator:

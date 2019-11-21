@@ -113,10 +113,10 @@ class Parser:
             if isinstance(obj, DocumentedClass) or \
                     isinstance(obj, DocumentedInterface) or \
                     isinstance(obj, DocumentedEnum):
-                file.classes.append(obj)
-
                 if len(stack) > 0:
                     stack[-1].inner_classes.append(obj)
+                else:
+                    file.classes.append(obj)
 
                 stack.append(obj)
 

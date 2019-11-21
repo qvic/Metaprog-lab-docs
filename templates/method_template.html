@@ -1,9 +1,9 @@
 <h3>{{ name }}</h3>
-<p>return type: <br><code>{{ return_type }}</code></p>
-<p>args: <br><code>{{ args }}</code></p>
-<span class="badge big-badge badge-primary">{{ access_modifier }}</span>
-<span class="badge big-badge badge-light">{{ modifiers }}</span>
+<p><span class="text-black-50">return type</span> <code>{{ return_type }}</code></p>
+<p><span class="text-black-50">args</span> <br><code>{{ args }}</code></p>
 <span class="badge big-badge badge-info">{{ annotations }}</span>
-<span class="badge big-badge badge-danger">{{ throws }}</span>
+<span class="badge big-badge badge-primary"><span class="text-white-50">access</span> {{ access_modifier }}</span>
+<span class="badge big-badge badge-light">{{ modifiers }}</span>
+<span class="badge big-badge badge-danger"><span class="text-white-50">throws</span> {{ throws }}</span>
 <pre>{{ docs }}</pre>
 <hr>
