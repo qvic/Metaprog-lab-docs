@@ -1,5 +1,6 @@
 import collections
 import os
+import re
 import time
 from distutils import dir_util
 from pydoc import html
@@ -41,7 +42,8 @@ class PageGenerator:
                                                         os.path.dirname(documented_file.file_path)),
                     package_structure=rendered_package_structure,
                     file_path=documented_file.file_path,
-                    package_name=documented_file.package,
+                    file_doc=PageGenerator.render_doc_string(documented_file.file_doc, documented_file, file_list),
+                    package_name=documented_file.package or '',
                     index_page_path=os.path.relpath('index.html',
                                                     os.path.dirname(documented_file.file_path)),
                     classes=''.join(rendered_classes_list)))
@@ -58,7 +60,7 @@ class PageGenerator:
             return PageGenerator._render_interface(obj, documented_file, file_list)
 
     @staticmethod
-    def _render_methods(methods) -> str:
+    def _render_methods(methods, documented_file: DocumentedFile, file_list: List[DocumentedFile]) -> str:
         return ''.join(PageGenerator.templates.get('method').render(
             name=m.name,
             return_type=html.escape(m.return_type),
@@ -67,17 +69,17 @@ class PageGenerator:
             access_modifier=m.access_modifier,
             modifiers=' '.join(html.escape(modifier) for modifier in m.modifiers),
             throws=', '.join(m.throws),
-            docs=m.docs) for m in methods)
+            docs=PageGenerator.render_doc_string(m.docs, documented_file, file_list)) for m in methods)
 
     @staticmethod
-    def _render_properties(properties) -> str:
+    def _render_properties(properties, documented_file: DocumentedFile, file_list: List[DocumentedFile]) -> str:
         return ''.join(PageGenerator.templates.get('property').render(
             name=p.name,
             type=html.escape(p.type),
             annotations=' '.join(p.annotations),
             access_modifier=p.access_modifier,
             modifiers=' '.join(html.escape(modifier) for modifier in p.modifiers),
-            docs=p.docs) for p in properties)
+            docs=PageGenerator.render_doc_string(p.docs, documented_file, file_list)) for p in properties)
 
     @staticmethod
     def _render_class(c: DocumentedClass, documented_file: DocumentedFile, file_list: List[DocumentedFile]) -> str:
@@ -87,13 +89,14 @@ class PageGenerator:
             impl_list.append(PageGenerator._render_class_link(class_name, documented_file, file_list))
         rendered_impl_list = ', '.join(impl_list)
 
-        rendered_methods = PageGenerator._render_methods(c.methods)
-        rendered_properties = PageGenerator._render_properties(c.properties)
+        rendered_methods = PageGenerator._render_methods(c.methods, documented_file, file_list)
+        rendered_properties = PageGenerator._render_properties(c.properties, documented_file, file_list)
 
         rendered_extends = PageGenerator._render_class_link(c.extends, documented_file, file_list)
 
         return PageGenerator.templates.get('class').render(name=html.escape(c.name),
-                                                           docs=c.docs,
+                                                           docs=PageGenerator.render_doc_string(c.docs, documented_file,
+                                                                                                file_list),
                                                            extends=rendered_extends,
                                                            impl_list=rendered_impl_list,
                                                            inner_classes=''.join(
@@ -112,11 +115,12 @@ class PageGenerator:
             impl_list.append(PageGenerator._render_class_link(class_name, documented_file, file_list))
         rendered_impl_list = ', '.join(impl_list)
 
-        rendered_methods = PageGenerator._render_methods(c.methods)
-        rendered_properties = PageGenerator._render_properties(c.properties)
+        rendered_methods = PageGenerator._render_methods(c.methods, documented_file, file_list)
+        rendered_properties = PageGenerator._render_properties(c.properties, documented_file, file_list)
 
         return PageGenerator.templates.get('enum').render(name=html.escape(c.name),
-                                                          docs=c.docs,
+                                                          docs=PageGenerator.render_doc_string(c.docs, documented_file,
+                                                                                               file_list),
                                                           impl_list=rendered_impl_list,
                                                           inner_classes=''.join(
                                                               PageGenerator._render_class_like_object(ic,
@@ -136,10 +140,12 @@ class PageGenerator:
             extends_list.append(PageGenerator._render_class_link(class_name, documented_file, file_list))
         rendered_extends_list = ', '.join(extends_list)
 
-        rendered_methods = PageGenerator._render_methods(c.methods)
+        rendered_methods = PageGenerator._render_methods(c.methods, documented_file, file_list)
 
         return PageGenerator.templates.get('interface').render(name=html.escape(c.name),
-                                                               docs=c.docs,
+                                                               docs=PageGenerator.render_doc_string(c.docs,
+                                                                                                    documented_file,
+                                                                                                    file_list),
                                                                extends_list=rendered_extends_list,
                                                                inner_classes=''.join(
                                                                    PageGenerator._render_class_like_object(ic,
@@ -178,13 +184,15 @@ class PageGenerator:
 
     @staticmethod
     def _render_class_link(class_name, documented_file, file_list):
+        if class_name is not None:
+            class_name = class_name.split('.')[-1]
         path = documented_file.get_doc_import_path(class_name, file_list)
         return '<a class="{0}" href="{1}">{2}</a>'.format('disabled' if path is None else '',
                                                           path,
                                                           class_name or '')
 
     @staticmethod
-    def create_index_page(tree: FileTreeNode, file_list: List[DocumentedFile], project_name):
+    def create_index_page(tree: FileTreeNode, file_list: List[DocumentedFile], project_name, project_version):
         file_path = os.path.join(PageGenerator.DIR, 'index.html')
 
         rendered_package_structure = PageGenerator._render_tree(tree, None,
@@ -198,7 +206,8 @@ class PageGenerator:
                 package_structure=rendered_package_structure,
                 generation_date=time.strftime("%Y-%m-%d %H:%M:%S"),
                 alphabetical_index=rendered_alphabetical_index,
-                project_name=project_name
+                project_name=project_name,
+                project_version=project_version or ''
             ))
 
     @staticmethod
@@ -219,3 +228,44 @@ class PageGenerator:
                                                                           name=file.get_file_name())
 
         return result
+
+    @staticmethod
+    def render_doc_string(doc: Optional[str], documented_file: DocumentedFile, file_list: List[DocumentedFile]):
+        if doc is None:
+            return ''
+
+        lines = doc.split('\n')
+        result = ''
+        for line in lines:
+            result += PageGenerator._process_doc_string_line(line, documented_file, file_list)
+
+        return result
+
+    @staticmethod
+    def _process_doc_string_line(line: str, documented_file: DocumentedFile, file_list: List[DocumentedFile]):
+        i = line.rfind('*')
+
+        if i < 0:
+            line = line + '\n'
+        elif i + 1 < len(line) and line[i + 1] == '/':
+            line = ''
+        else:
+            line = line[i + 1:].strip() + '\n'
+
+        matches = re.finditer(r'{(?:@code) (.*?)}', line)
+        shift = 0
+        for match in matches:
+            argument = html.escape(match.group(1))
+            line = line[:match.start() + shift] + argument + line[match.end() + shift:]
+            shift += len(argument) - match.end() + match.start()
+
+        matches = re.finditer(r'{(?:@link) (\w+(:?.\w+)*)}', line)
+        shift = 0
+        for match in matches:
+            argument = PageGenerator._render_class_link(match.group(1), documented_file, file_list)
+            line = line[:match.start() + shift] + argument + line[match.end() + shift:]
+            shift += len(argument) - match.end() + match.start()
+
+        line = re.sub(r'(@[a-z]+)', r'<span class="text-primary">\1</span>', line)
+
+        return line

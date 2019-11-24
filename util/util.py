@@ -339,6 +339,12 @@ class PackageName(Representable):
         self.name = None
 
 
+class MultilineComment(Representable):
+
+    def __init__(self, value):
+        self.value = value
+
+
 class Declaration(Representable):
 
     def __init__(self):
@@ -357,6 +363,7 @@ class DocumentedFile(Representable):
         self.classes = []
         self.imports = []
         self.package = None
+        self.file_doc = None
 
     def get_file_name(self):
         return self.file_path.split('/')[-1].split('.')[0]

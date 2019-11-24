@@ -5,7 +5,7 @@ body {
 #sidebar-wrapper {
     min-height: 100vh;
     margin-left: -15rem;
-    max-width: 30rem;
+    width: 30rem;
 }
 
 #sidebar-wrapper .list-group {
@@ -49,24 +49,28 @@ body {
     line-height: 20px;
 }
 
-.list-group.list-group-root > .list-group-item:first-child {
-    border-top-width: 0;
+.list-group-root .tree .list-group .list-group-item {
+    padding-left: 10px;
 }
 
-.list-group.list-group-root > .list-group > .list-group-item {
+.list-group-root .tree .tree .list-group .list-group-item {
+    padding-left: 20px;
+}
+
+.list-group-root .tree .tree .tree .list-group .list-group-item {
     padding-left: 30px;
 }
 
-.list-group.list-group-root > .list-group > .list-group > .list-group-item {
-    padding-left: 45px;
+.list-group-root .tree .tree .tree .tree .list-group .list-group-item {
+    padding-left: 40px;
 }
 
-.list-group.list-group-root > .list-group > .list-group > .list-group > .list-group-item {
+.list-group-root .tree .tree .tree .tree .tree .list-group .list-group-item {
+    padding-left: 50px;
+}
+
+.list-group-root .tree .tree .tree .tree .tree .tree .list-group .list-group-item {
     padding-left: 60px;
-}
-
-.list-group.list-group-root > .list-group > .list-group > .list-group > .list-group .list-group-item {
-    padding-left: 75px;
 }
 
 
@@ -84,14 +88,11 @@ body {
 }
 
 .nested {
-    max-height: 0;
-    transition: max-height 200ms cubic-bezier(.45, .05, .55, .95);
-    overflow: hidden;
+    display: none;
 }
 
 .nested.active {
-    max-height: max-content;
-    transition: max-height 200ms cubic-bezier(.45, .05, .55, .95);
+    display: block;
 }
 
 a.disabled {
@@ -105,8 +106,4 @@ a.disabled {
 
 .navbar {
     height: 60px;
-}
-
-.inner-classes {
-    /*font-size: 0.8em;*/
 }

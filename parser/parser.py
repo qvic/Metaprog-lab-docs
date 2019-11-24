@@ -8,7 +8,8 @@ from page.generator import PageGenerator
 from parser.fmt import ParserFiniteStateMachine
 from parser.states import ParserInitialState
 from util.util import FileTreeNode, SourceFile, Helpers, DocumentedClass, DocumentedMethod, DocumentedInterface, \
-    Delimiter, PackageName, Imports, Declaration, DocumentedFile, DocumentedProperty, DocumentedEnum, EnumValue
+    Delimiter, PackageName, Imports, Declaration, DocumentedFile, DocumentedProperty, DocumentedEnum, EnumValue, \
+    MultilineComment
 
 
 class Parser:
@@ -16,7 +17,7 @@ class Parser:
     SCAN_DIR = 'java'
 
     @staticmethod
-    def parse(dir_path: str, project_name: str = None, verbose: bool = False):
+    def parse(dir_path: str, project_name: str = None, project_version: str = None, verbose: bool = False):
         if project_name is None:
             project_name = dir_path
 
@@ -36,7 +37,7 @@ class Parser:
         file_list = []
         tree.traverse(lambda documented_file: file_list.append(documented_file))
 
-        PageGenerator.create_index_page(tree, file_list, project_name)
+        PageGenerator.create_index_page(tree, file_list, project_name, project_version)
 
         tree.traverse(lambda documented_file: PageGenerator.create_file(tree, documented_file, file_list))
 
@@ -114,7 +115,11 @@ class Parser:
         file = DocumentedFile()
 
         for obj in iterator:
-            if isinstance(obj, DocumentedClass) or \
+            if isinstance(obj, MultilineComment):
+                if len(stack) == 0:
+                    file.file_doc = obj.value
+
+            elif isinstance(obj, DocumentedClass) or \
                     isinstance(obj, DocumentedInterface) or \
                     isinstance(obj, DocumentedEnum):
                 if len(stack) > 0:
@@ -197,6 +202,9 @@ class Parser:
 
             elif state == 'DeclarationWithModifiersState':
                 declaration.modifiers.extend([token.value for token in tokens])
+
+            elif state == 'MultilineCommentState':
+                yield MultilineComment(tokens[0].value)
 
             # class
 

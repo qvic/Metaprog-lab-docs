@@ -9,6 +9,8 @@ class ParserInitialState(State):
     def on_event(self, event: TokenEvent) -> 'State':
         if event.token.state == 'JavadocState':
             return DeclarationWithDocsState()
+        elif event.token.state == 'MultilineCommentState':
+            return MultilineCommentState()
         elif event.token.state == 'AnnotationState':
             return DeclarationWithAnnotationsState()
         elif event.token.state == 'AccessModifierState':
@@ -378,6 +380,12 @@ class ClosedBracketState(State):
 
 class OpenBracketState(State):
     separated = True
+
+    def on_event(self, event) -> 'State':
+        return ParserInitialState().on_event(event)
+
+
+class MultilineCommentState(State):
 
     def on_event(self, event) -> 'State':
         return ParserInitialState().on_event(event)
