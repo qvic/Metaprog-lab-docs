@@ -174,10 +174,13 @@ class PageGenerator:
                 if file is current_file:
                     node_class = 'text-primary'
 
-                file_in_package_path = file.get_package_path()
-                package_path = os.path.join(*current_file.package.split('.'))
-                relative_path = os.path.relpath(file_in_package_path,
-                                                package_path)
+                if current_file.package is None:
+                    relative_path = os.path.relpath(file.file_path, os.path.dirname(current_file.file_path))
+                else:
+                    file_in_package_path = file.get_package_path()
+                    package_path = os.path.join(*current_file.package.split('.'))
+                    relative_path = os.path.relpath(file_in_package_path,
+                                                    package_path)
             else:
                 relative_path = file.file_path
 

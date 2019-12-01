@@ -85,6 +85,7 @@ class Parser:
     @staticmethod
     def parse_source_file(source_file: SourceFile) -> DocumentedFile:
         contents = source_file.read_all()
+        print(source_file.file_path)
         doc_file = Parser.parse_structure(contents)
         doc_file.file_path = source_file.file_path
         return doc_file
@@ -107,7 +108,7 @@ class Parser:
 
         for obj in iterator:
             if isinstance(obj, MultilineComment):
-                if len(stack) == 0:
+                if len(stack) == 0 and file.file_doc is None:
                     file.file_doc = obj.value
 
             elif isinstance(obj, DocumentedClass) or \

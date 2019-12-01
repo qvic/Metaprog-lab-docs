@@ -166,6 +166,8 @@ class EnumNameState(State):
             if event.token.value == 'implements':
                 if event.lookahead(1)[0].state == 'NameState':
                     return SkipState(ClassImplementsListState())
+        elif event.token.state == 'MultilineCommentState':
+            return SkipState(self, activate=True, as_state='MultilineCommentState')
         elif event.token.state == 'OpenBracketState' and event.token.value == '{':
             return EnumOpenBracketState()
 
@@ -177,6 +179,8 @@ class EnumImplementsState(State):
         if event.token.state == 'IdentifierState' and event.token.value == 'implements':
             if event.lookahead(1)[0].state == 'NameState':
                 return SkipState(EnumImplementsListState())
+        elif event.token.state == 'MultilineCommentState':
+            return SkipState(self, activate=True, as_state='MultilineCommentState')
         elif event.token.state == 'OpenBracketState' and event.token.value == '{':
             return EnumOpenBracketState()
 
@@ -188,6 +192,8 @@ class EnumImplementsListState(State):
         if event.token.state == 'DelimiterState' and event.token.value == ',':
             if event.lookahead(1)[0].state == 'NameState':
                 return SkipState(self)
+        elif event.token.state == 'MultilineCommentState':
+            return SkipState(self, activate=True, as_state='MultilineCommentState')
         elif event.token.state == 'OpenBracketState' and event.token.value == '{':
             return EnumOpenBracketState()
 
@@ -208,6 +214,8 @@ class EnumValuesListState(State):
         if event.token.state == 'DelimiterState' and event.token.value == ',':
             if event.lookahead(1)[0].state == 'NameState':
                 return SkipState(self)
+        elif event.token.state == 'MultilineCommentState':
+            return SkipState(self, activate=True, as_state='MultilineCommentState')
         elif event.token.state == 'OpenBracketState' and event.token.value == '{':
             return OpenBracketState()
         elif event.token.state == 'DelimiterState' and event.token.value == ';':
@@ -233,6 +241,8 @@ class ClassNameState(State):
             elif event.token.value == 'implements':
                 if event.lookahead(1)[0].state == 'NameState':
                     return SkipState(ClassImplementsListState())
+        elif event.token.state == 'MultilineCommentState':
+            return SkipState(self, activate=True, as_state='MultilineCommentState')
         elif event.token.state == 'OpenBracketState' and event.token.value == '{':
             return ClassOpenBracketState()
 
@@ -244,6 +254,8 @@ class ClassImplementsState(State):
         if event.token.state == 'IdentifierState' and event.token.value == 'implements':
             if event.lookahead(1)[0].state == 'NameState':
                 return SkipState(ClassImplementsListState())
+        elif event.token.state == 'MultilineCommentState':
+            return SkipState(self, activate=True, as_state='MultilineCommentState')
         elif event.token.state == 'OpenBracketState' and event.token.value == '{':
             return ClassOpenBracketState()
 
@@ -255,6 +267,8 @@ class ClassImplementsListState(State):
         if event.token.state == 'DelimiterState' and event.token.value == ',':
             if event.lookahead(1)[0].state == 'NameState':
                 return SkipState(self)
+        elif event.token.state == 'MultilineCommentState':
+            return SkipState(self, activate=True, as_state='MultilineCommentState')
         elif event.token.state == 'OpenBracketState' and event.token.value == '{':
             return ClassOpenBracketState()
 
@@ -295,6 +309,9 @@ class MethodArgumentsState(State):
         elif event.token.state == 'DelimiterState' and event.token.value == ';':
             return SkipState(ParserInitialState(), activate=True, as_state='InterfaceMethodDelimiter')
 
+        elif event.token.state == 'MultilineCommentState':
+            return SkipState(self, activate=True, as_state='MultilineCommentState')
+
         elif event.token.state == 'OpenBracketState' and event.token.value == '{':
             return MethodOpenBracketState()
 
@@ -305,7 +322,8 @@ class MethodPostArgumentsState(State):
     def on_event(self, event) -> 'State':
         if event.token.state == 'DelimiterState' and event.token.value == ';':
             return SkipState(ParserInitialState(), activate=True, as_state='InterfaceMethodDelimiter')
-
+        elif event.token.state == 'MultilineCommentState':
+            return SkipState(self, activate=True, as_state='MultilineCommentState')
         elif event.token.state == 'OpenBracketState' and event.token.value == '{':
             return MethodOpenBracketState()
 
@@ -326,6 +344,8 @@ class InterfaceNameState(State):
             if event.token.value == 'extends':
                 if event.lookahead(1)[0].state == 'NameState':
                     return SkipState(InterfaceExtendsListState())
+        elif event.token.state == 'MultilineCommentState':
+            return SkipState(self, activate=True, as_state='MultilineCommentState')
         elif event.token.state == 'OpenBracketState' and event.token.value == '{':
             return SkipState(ParserInitialState(), activate=True, as_state='InterfaceOpenBracketState')
 
@@ -337,6 +357,8 @@ class InterfaceExtendsListState(State):
         if event.token.state == 'DelimiterState' and event.token.value == ',':
             if event.lookahead(1)[0].state == 'NameState':
                 return SkipState(self)
+        elif event.token.state == 'MultilineCommentState':
+            return SkipState(self, activate=True, as_state='MultilineCommentState')
         elif event.token.state == 'OpenBracketState' and event.token.value == '{':
             return SkipState(ParserInitialState(), activate=True, as_state='InterfaceOpenBracketState')
 

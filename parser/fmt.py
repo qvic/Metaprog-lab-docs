@@ -54,8 +54,11 @@ class ParserFiniteStateMachine:
         while len(self.partition) > 0 \
                 and len(self.partition[-1][1]) > 0 \
                 and self.partition[-1][1][0].state not in ['OpenBracketState',
-                                                            'ClosedBracketState',
-                                                            'DelimiterState']:
+                                                           'ClosedBracketState',
+                                                           'DelimiterState']:
+            if self.partition[-1][0] in ['PackageState', 'ImportState']:
+                break
+
             self.partition.pop()
 
 
