@@ -122,7 +122,6 @@ class Parser:
 
             elif isinstance(obj, DocumentedProperty):
                 if len(stack) == 0:
-                    print('Can\'t assign property', obj, 'anywhere')
                     continue
 
                 if isinstance(stack[-1], DocumentedClass) or isinstance(stack[-1], DocumentedEnum):
@@ -130,7 +129,6 @@ class Parser:
 
             elif isinstance(obj, DocumentedMethod):
                 if len(stack) == 0:
-                    print('Can\'t assign method', obj, 'anywhere')
                     continue
 
                 if isinstance(stack[-1], DocumentedClass) or \
@@ -143,7 +141,6 @@ class Parser:
 
             elif isinstance(obj, EnumValue):
                 if len(stack) == 0:
-                    print('Can\'t assign enum value', obj, 'anywhere')
                     continue
 
                 if isinstance(stack[-1], DocumentedEnum):
@@ -153,7 +150,7 @@ class Parser:
                 try:
                     stack.pop()
                 except IndexError:
-                    print("Unexpected closing bracket")
+                    continue
 
             elif isinstance(obj, Delimiter) and obj.char == '{':
                 stack.append(None)
