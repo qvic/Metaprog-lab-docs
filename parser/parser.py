@@ -30,7 +30,7 @@ class Parser:
         if os.path.isfile(input_path):
             tree = Parser._generate_tree_from_list([(os.path.dirname(input_path), [], [input_path])])
         elif os.path.isdir(input_path):
-            tree = Parser._generate_tree_from_list(Parser._list_files_hierarchy(input_path))
+            tree = Parser._generate_tree_from_list(Parser._list_files_hierarchy(input_path, shallow))
         else:
             raise ValueError('Invalid input path.')
 
@@ -50,11 +50,17 @@ class Parser:
         PageGenerator.create_index_page(tree, file_list, project_name, project_version, output_dir)
 
     @staticmethod
-    def _list_files_hierarchy(dir_path: str) -> List:
+    def _list_files_hierarchy(dir_path: str, shallow: bool) -> List:
         result = []
 
         for root, dirs, files in os.walk(dir_path):
+            if shallow:
+                dirs = []
+
             result.append((root, dirs, files))
+
+            if shallow:
+                break
 
         return result
 
