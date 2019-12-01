@@ -10,19 +10,23 @@ from page.template import FileTemplate, TemplateRegistry
 from util.util import DocumentedFile, FileTreeNode, DocumentedClass, DocumentedInterface, \
     DocumentedEnum
 
+cwd = os.path.dirname(os.path.realpath(__file__))
+
 
 class PageGenerator:
-    DIR = 'html'
-
     templates = TemplateRegistry()
 
     @staticmethod
-    def copy_resources():
-        dir_util.copy_tree('templates/static', os.path.join(PageGenerator.DIR, 'static'))
+    def copy_resources(dir: str):
+        dir_util.copy_tree(os.path.join(cwd, '../templates/static'), os.path.join(dir, 'static'))
 
     @staticmethod
-    def create_file(tree: FileTreeNode, documented_file: DocumentedFile, file_list: List[DocumentedFile]):
-        html_file_path = os.path.join(PageGenerator.DIR, documented_file.file_path + '.html')
+    def create_file(tree: FileTreeNode, documented_file: DocumentedFile, file_list: List[DocumentedFile], dir: str):
+        root_path = tree.directory
+        rel_file_path = os.path.relpath(documented_file.file_path, root_path)
+        html_file_path = os.path.join(dir, rel_file_path + '.html')
+        documented_file.file_path = rel_file_path
+
         os.makedirs(os.path.dirname(html_file_path), exist_ok=True)
 
         with open(html_file_path, 'w') as file:
@@ -192,8 +196,8 @@ class PageGenerator:
                                                           class_name or '')
 
     @staticmethod
-    def create_index_page(tree: FileTreeNode, file_list: List[DocumentedFile], project_name, project_version):
-        file_path = os.path.join(PageGenerator.DIR, 'index.html')
+    def create_index_page(tree: FileTreeNode, file_list: List[DocumentedFile], project_name, project_version, dir: str):
+        file_path = os.path.join(dir, 'index.html')
 
         rendered_package_structure = PageGenerator._render_tree(tree, None,
                                                                 PageGenerator.templates.get('list_package'),

@@ -12,18 +12,22 @@ from util.util import FileTreeNode, SourceFile, Helpers, DocumentedClass, Docume
     MultilineComment
 
 
+# режим дерева
+# опція рівень файлів, скіпати файли
+# фолдери будь-які
+# вихідний шлях вказувати
+
 class Parser:
     ACCEPTED_EXTENSIONS = ['.java']
-    SCAN_DIR = 'java'
 
     @staticmethod
-    def parse(dir_path: str, project_name: str = None, project_version: str = None, verbose: bool = False):
-        if project_name is None:
-            project_name = dir_path
+    def parse(input_path: str, output_dir: str, project_name: str = None, project_version: str = None,
+              verbose: bool = False, shallow: bool = False):
 
-        tree = Parser._to_package_structure(
-            Parser._generate_tree_from_list(
-                Parser._list_files_hierarchy(dir_path)))
+        if project_name is None:
+            project_name = input_path
+
+        tree = Parser._generate_tree_from_list(Parser._list_files_hierarchy(input_path))
 
         if verbose:
             print("Project file structure:")
@@ -32,14 +36,13 @@ class Parser:
 
         tree.apply(lambda file: Parser.parse_source_file(file), verbose)
 
-        PageGenerator.copy_resources()
+        PageGenerator.copy_resources(output_dir)
 
         file_list = []
         tree.traverse(lambda documented_file: file_list.append(documented_file))
 
-        PageGenerator.create_index_page(tree, file_list, project_name, project_version)
-
-        tree.traverse(lambda documented_file: PageGenerator.create_file(tree, documented_file, file_list))
+        tree.traverse(lambda documented_file: PageGenerator.create_file(tree, documented_file, file_list, output_dir))
+        PageGenerator.create_index_page(tree, file_list, project_name, project_version, output_dir)
 
     @staticmethod
     def _list_files_hierarchy(dir_path: str) -> List:
@@ -73,23 +76,6 @@ class Parser:
                 stack.append(node)
 
         return root_node
-
-    @staticmethod
-    def _to_package_structure(tree: FileTreeNode) -> FileTreeNode:
-        queue = deque()
-        queue.append(tree)
-
-        while queue:
-            tree = queue.popleft()
-            if tree.directory == Parser.SCAN_DIR:
-                if len(tree.children) == 0:
-                    raise Exception('Empty java/ directory.')
-                return tree.children[0]
-
-            for subtree in tree.children:
-                queue.append(subtree)
-
-        raise Exception('No java directory found.')
 
     @staticmethod
     def parse_source_file(source_file: SourceFile) -> DocumentedFile:

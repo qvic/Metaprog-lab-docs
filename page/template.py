@@ -1,5 +1,7 @@
+import os
 import re
-from abc import ABC
+
+cwd = os.path.dirname(os.path.realpath(__file__))
 
 
 class TemplateRegistry:
@@ -7,15 +9,15 @@ class TemplateRegistry:
     def __init__(self):
         # todo template path
         self.templates = {
-            'root': FileTemplate('templates/template.html'),
-            'method': FileTemplate('templates/method_template.html'),
-            'property': FileTemplate('templates/property_template.html'),
-            'class': FileTemplate('templates/class_template.html'),
-            'interface': FileTemplate('templates/interface_template.html'),
-            'enum': FileTemplate('templates/enum_template.html'),
-            'list_package': FileTemplate('templates/list_package_template.html'),
-            'list_item': FileTemplate('templates/list_item_template.html'),
-            'index': FileTemplate('templates/index_template.html')
+            'root': FileTemplate('../templates/template.html'),
+            'method': FileTemplate('../templates/method_template.html'),
+            'property': FileTemplate('../templates/property_template.html'),
+            'class': FileTemplate('../templates/class_template.html'),
+            'interface': FileTemplate('../templates/interface_template.html'),
+            'enum': FileTemplate('../templates/enum_template.html'),
+            'list_package': FileTemplate('../templates/list_package_template.html'),
+            'list_item': FileTemplate('../templates/list_item_template.html'),
+            'index': FileTemplate('../templates/index_template.html')
         }
 
     def get(self, obj_name: str) -> 'FileTemplate':
@@ -41,6 +43,6 @@ class TextTemplate:
 class FileTemplate(TextTemplate):
 
     def __init__(self, template_path):
-        with open(template_path, 'r') as file:
+        with open(os.path.join(cwd, template_path), 'r') as file:
             text = file.read()
         super().__init__(text)
