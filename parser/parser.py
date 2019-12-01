@@ -66,7 +66,7 @@ class Parser:
             raise Exception('Path does not exist')
 
         root_path, root_directories, root_files = file_hierarchy_list[0]
-        root_node = FileTreeNode(root_path, root_files)
+        root_node = FileTreeNode(os.path.abspath(root_path), root_files)
 
         stack = deque()
         stack.append(root_node)
@@ -75,7 +75,7 @@ class Parser:
             last_node = stack.pop()
 
             filtered_files = filter(lambda file: Helpers.get_file_extension(file) in Parser.ACCEPTED_EXTENSIONS, files)
-            last_node.files = list(map(lambda file: SourceFile(file), filtered_files))
+            last_node.files = list(map(lambda file: SourceFile(os.path.join(root, file)), filtered_files))
 
             for directory in reversed(dirs):
                 node = FileTreeNode(directory, [])
