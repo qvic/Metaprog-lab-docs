@@ -12,11 +12,6 @@ from util.util import FileTreeNode, SourceFile, Helpers, DocumentedClass, Docume
     MultilineComment
 
 
-# режим дерева
-# опція рівень файлів, скіпати файли
-# фолдери будь-які
-# вихідний шлях вказувати
-
 class Parser:
     ACCEPTED_EXTENSIONS = ['.java']
 
