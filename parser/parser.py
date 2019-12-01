@@ -27,7 +27,12 @@ class Parser:
         if project_name is None:
             project_name = input_path
 
-        tree = Parser._generate_tree_from_list(Parser._list_files_hierarchy(input_path))
+        if os.path.isfile(input_path):
+            tree = Parser._generate_tree_from_list([(os.path.dirname(input_path), [], [input_path])])
+        elif os.path.isdir(input_path):
+            tree = Parser._generate_tree_from_list(Parser._list_files_hierarchy(input_path))
+        else:
+            raise ValueError('Invalid input path.')
 
         if verbose:
             print("Project file structure:")
@@ -55,6 +60,8 @@ class Parser:
 
     @staticmethod
     def _generate_tree_from_list(file_hierarchy_list: List) -> FileTreeNode:
+        print(file_hierarchy_list)
+
         if len(file_hierarchy_list) == 0:
             raise Exception('Path does not exist')
 
@@ -68,7 +75,7 @@ class Parser:
             last_node = stack.pop()
 
             filtered_files = filter(lambda file: Helpers.get_file_extension(file) in Parser.ACCEPTED_EXTENSIONS, files)
-            last_node.files = list(map(lambda file: SourceFile(os.path.join(root, file)), filtered_files))
+            last_node.files = list(map(lambda file: SourceFile(file), filtered_files))
 
             for directory in reversed(dirs):
                 node = FileTreeNode(directory, [])
