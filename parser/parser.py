@@ -66,8 +66,6 @@ class Parser:
 
     @staticmethod
     def _generate_tree_from_list(file_hierarchy_list: List) -> FileTreeNode:
-        print(file_hierarchy_list)
-
         if len(file_hierarchy_list) == 0:
             raise Exception('Path does not exist')
 
