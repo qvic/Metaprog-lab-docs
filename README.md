@@ -3,22 +3,26 @@ Documentation generator for Java
 
 ---
 
-**positional arguments:**
-
-_directory_ - Directory with sources. Should contain "java/" directory.
-
-**optional arguments:**
-
-_-h, --help_ - show this help message and exit
-
-_--name PROJECT_NAME_ - Project name, showed on index page.
-
-_--version PROJECT_VERSION_ - Project version, showed on index page.
-
-_-v_ - Verbose output
+    usage: main.py [-h] [--shallow] [--name PROJECT_NAME]
+                   [--version PROJECT_VERSION] [-v]
+                   input output_directory
+    
+    Documentation generator for Java.
+    
+    positional arguments:
+      input                 Directory or file path with sources.
+      output_directory      Documentation destination folder.
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      --shallow             Scan only files in passed directory.
+      --name PROJECT_NAME   Project name, showed on index page.
+      --version PROJECT_VERSION
+                            Project version, showed on index page.
+      -v                    Verbose output
 
 ---
 
 Example:
 
-_python main.py my_project/ --name MyProject --version 1.0_
+    python main.py my_project/ docs/ --name MyProject --version 1.0
