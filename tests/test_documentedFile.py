@@ -25,7 +25,7 @@ class TestDocumentedFile(TestCase):
         file_list[0].package = 'org.test.package.core'
         file_list[0].file_path = 'org/test/package/core/Class.java'
 
-        self.assertEqual(file.get_doc_import_path('Class', []), 'core/Class.java.html')
+        self.assertEqual(file.get_doc_import_path('Class', file_list), 'core/Class.java.html')
 
     def test_get_import_path_disjoint(self):
         file = DocumentedFile()

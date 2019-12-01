@@ -4,6 +4,8 @@ from lexer.util import CharacterEvent
 
 
 class State(ABC):
+    __slots__ = ()
+
     separated = False
 
     @abstractmethod

@@ -50,12 +50,11 @@ class Parser:
 
         for root, dirs, files in os.walk(dir_path):
             if shallow:
-                dirs = []
+                result.append((root, [], files))
+                break
 
             result.append((root, dirs, files))
 
-            if shallow:
-                break
 
         return result
 
@@ -65,7 +64,7 @@ class Parser:
             raise Exception('Path does not exist')
 
         root_path, root_directories, root_files = file_hierarchy_list[0]
-        root_node = FileTreeNode(os.path.abspath(root_path), root_files)
+        root_node = FileTreeNode(root_path, root_files)
 
         stack = deque()
         stack.append(root_node)
