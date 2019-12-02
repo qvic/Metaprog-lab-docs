@@ -175,7 +175,9 @@ class Parser:
 
         for state, tokens in token_states:
             if state == 'ImportState':
-                imports.add_name(tokens[1].value)
+                print(tokens)
+                if len(tokens) > 1:
+                    imports.add_name(tokens[1].value)
 
             elif state == 'PackageState':
                 package.name = tokens[1].value
