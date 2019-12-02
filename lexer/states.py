@@ -205,7 +205,8 @@ class GenericState(State):
         elif event.character_met.isspace() or \
                 event.character_met.isidentifier() or \
                 event.character_met.isnumeric() or \
-                event.character_met == '?':
+                event.character_met == '?' or \
+                event.character_met == ',':
             return self
 
         return InitialState().on_event(event)

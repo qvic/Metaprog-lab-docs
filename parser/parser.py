@@ -175,14 +175,14 @@ class Parser:
 
         for state, tokens in token_states:
             if state == 'ImportState':
-                print(tokens)
                 if len(tokens) > 1:
                     imports.add_name(tokens[1].value)
 
             elif state == 'PackageState':
-                package.name = tokens[1].value
-                yield package
-                package = PackageName()
+                if len(tokens) > 1:
+                    package.name = tokens[1].value
+                    yield package
+                    package = PackageName()
 
             elif state == 'DeclarationWithDocsState':
                 declaration.docs = tokens[0].value
