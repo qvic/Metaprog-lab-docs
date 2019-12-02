@@ -372,9 +372,6 @@ class DocumentedFile(Representable):
         return self.file_path.split('/')[-1]
 
     def get_package_path(self):
-        if self.package is None:
-            return self.get_full_file_name()
-
         return os.path.join(*self.package.split('.'), self.get_full_file_name())
 
     def get_import_name(self):

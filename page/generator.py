@@ -26,10 +26,7 @@ class PageGenerator:
 
     @staticmethod
     def create_file(tree: FileTreeNode, documented_file: DocumentedFile, file_list: List[DocumentedFile], dir: str):
-        root_path = tree.directory
-        rel_file_path = os.path.relpath(documented_file.file_path, root_path)
-        html_file_path = os.path.join(dir, rel_file_path + '.html')
-        documented_file.file_path = rel_file_path
+        html_file_path = os.path.join(dir, documented_file.file_path + '.html')
 
         os.makedirs(os.path.dirname(html_file_path), exist_ok=True)
 
@@ -174,13 +171,7 @@ class PageGenerator:
                 if file is current_file:
                     node_class = 'text-primary'
 
-                if current_file.package is None:
-                    relative_path = os.path.relpath(file.file_path, os.path.dirname(current_file.file_path))
-                else:
-                    file_in_package_path = file.get_package_path()
-                    package_path = os.path.join(*current_file.package.split('.'))
-                    relative_path = os.path.relpath(file_in_package_path,
-                                                    package_path)
+                relative_path = os.path.relpath(file.file_path, os.path.dirname(current_file.file_path))
             else:
                 relative_path = file.file_path
 

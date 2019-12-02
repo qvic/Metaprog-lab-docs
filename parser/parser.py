@@ -34,7 +34,8 @@ class Parser:
             print(tree)
             print()
 
-        tree.apply(lambda file: Parser.parse_source_file(file), verbose)
+        root_path = tree.directory
+        tree.apply(lambda file: Parser.parse_source_file(file, root_path), verbose)
 
         PageGenerator.copy_resources(output_dir)
 
@@ -83,11 +84,13 @@ class Parser:
         return root_node
 
     @staticmethod
-    def parse_source_file(source_file: SourceFile) -> DocumentedFile:
+    def parse_source_file(source_file: SourceFile, root_path: str) -> DocumentedFile:
         contents = source_file.read_all()
         print(source_file.file_path)
         doc_file = Parser.parse_structure(contents)
-        doc_file.file_path = source_file.file_path
+
+        rel_file_path = os.path.relpath(source_file.file_path, root_path)
+        doc_file.file_path = rel_file_path
         return doc_file
 
     @staticmethod
