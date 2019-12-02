@@ -23,7 +23,7 @@ class Parser:
             project_name = input_path
 
         if os.path.isfile(input_path):
-            tree = Parser._generate_tree_from_list([(os.path.dirname(input_path), [], [input_path])])
+            tree = Parser._generate_tree_from_list([(os.path.dirname(input_path), [], [os.path.basename(input_path)])])
         elif os.path.isdir(input_path):
             tree = Parser._generate_tree_from_list(Parser._list_files_hierarchy(input_path, shallow))
         else:
@@ -86,7 +86,6 @@ class Parser:
     @staticmethod
     def parse_source_file(source_file: SourceFile, root_path: str) -> DocumentedFile:
         contents = source_file.read_all()
-        print(source_file.file_path)
         doc_file = Parser.parse_structure(contents)
 
         rel_file_path = os.path.relpath(source_file.file_path, root_path)
