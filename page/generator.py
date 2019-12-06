@@ -10,19 +10,24 @@ from page.template import FileTemplate, TemplateRegistry
 from util.util import DocumentedFile, FileTreeNode, DocumentedClass, DocumentedInterface, \
     DocumentedEnum
 
+cwd = os.path.dirname(os.path.realpath(__file__))
+
 
 class PageGenerator:
-    DIR = 'html'
-
     templates = TemplateRegistry()
 
-    @staticmethod
-    def copy_resources():
-        dir_util.copy_tree('templates/static', os.path.join(PageGenerator.DIR, 'static'))
+    docstring_code_regex = re.compile(r'{(?:@code) (.*?)}')
+    docstring_link_regex = re.compile(r'{(?:@link) ([\w.]+)}')
+    docstring_directive_regex = re.compile(r'(@[a-z]+)')
 
     @staticmethod
-    def create_file(tree: FileTreeNode, documented_file: DocumentedFile, file_list: List[DocumentedFile]):
-        html_file_path = os.path.join(PageGenerator.DIR, documented_file.file_path + '.html')
+    def copy_resources(dir: str):
+        dir_util.copy_tree(os.path.join(cwd, '../templates/static'), os.path.join(dir, 'static'))
+
+    @staticmethod
+    def create_file(tree: FileTreeNode, documented_file: DocumentedFile, file_list: List[DocumentedFile], dir: str):
+        html_file_path = os.path.join(dir, documented_file.file_path + '.html')
+
         os.makedirs(os.path.dirname(html_file_path), exist_ok=True)
 
         with open(html_file_path, 'w') as file:
@@ -166,10 +171,7 @@ class PageGenerator:
                 if file is current_file:
                     node_class = 'text-primary'
 
-                file_in_package_path = file.get_package_path()
-                package_path = os.path.join(*current_file.package.split('.'))
-                relative_path = os.path.relpath(file_in_package_path,
-                                                package_path)
+                relative_path = os.path.relpath(file.file_path, os.path.dirname(current_file.file_path))
             else:
                 relative_path = file.file_path
 
@@ -192,8 +194,8 @@ class PageGenerator:
                                                           class_name or '')
 
     @staticmethod
-    def create_index_page(tree: FileTreeNode, file_list: List[DocumentedFile], project_name, project_version):
-        file_path = os.path.join(PageGenerator.DIR, 'index.html')
+    def create_index_page(tree: FileTreeNode, file_list: List[DocumentedFile], project_name, project_version, dir: str):
+        file_path = os.path.join(dir, 'index.html')
 
         rendered_package_structure = PageGenerator._render_tree(tree, None,
                                                                 PageGenerator.templates.get('list_package'),
@@ -252,20 +254,20 @@ class PageGenerator:
         else:
             line = line[i + 1:].strip() + '\n'
 
-        matches = re.finditer(r'{(?:@code) (.*?)}', line)
+        matches = re.finditer(PageGenerator.docstring_code_regex, line)
         shift = 0
         for match in matches:
             argument = html.escape(match.group(1))
             line = line[:match.start() + shift] + argument + line[match.end() + shift:]
             shift += len(argument) - match.end() + match.start()
 
-        matches = re.finditer(r'{(?:@link) (\w+(:?.\w+)*)}', line)
+        matches = re.finditer(PageGenerator.docstring_link_regex, line)
         shift = 0
         for match in matches:
             argument = PageGenerator._render_class_link(match.group(1), documented_file, file_list)
             line = line[:match.start() + shift] + argument + line[match.end() + shift:]
             shift += len(argument) - match.end() + match.start()
 
-        line = re.sub(r'(@[a-z]+)', r'<span class="text-primary">\1</span>', line)
+        line = re.sub(PageGenerator.docstring_directive_regex, r'<span class="text-primary">\1</span>', line)
 
         return line

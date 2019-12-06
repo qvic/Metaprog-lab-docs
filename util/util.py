@@ -74,9 +74,9 @@ class FileTreeNode:
         while queue:
             tree = queue.popleft()
             for i, file in enumerate(tree.files):
-                if verbose:
-                    print('reading', file.file_path)
                 tree.files[i] = function(file)
+                if verbose:
+                    print('read', file.file_path)
 
             for subtree in tree.children:
                 queue.append(subtree)
@@ -366,10 +366,13 @@ class DocumentedFile(Representable):
         self.file_doc = None
 
     def get_file_name(self):
-        return self.file_path.split('/')[-1].split('.')[0]
+        return self.get_full_file_name().split('.')[0]
+
+    def get_full_file_name(self):
+        return self.file_path.split('/')[-1]
 
     def get_package_path(self):
-        return self.file_path[self.file_path.find('java') + 5:]
+        return os.path.join(*self.package.split('.'), self.get_full_file_name())
 
     def get_import_name(self):
         return self.package + '.' + self.get_file_name()

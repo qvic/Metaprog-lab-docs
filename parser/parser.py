@@ -14,39 +14,48 @@ from util.util import FileTreeNode, SourceFile, Helpers, DocumentedClass, Docume
 
 class Parser:
     ACCEPTED_EXTENSIONS = ['.java']
-    SCAN_DIR = 'java'
 
     @staticmethod
-    def parse(dir_path: str, project_name: str = None, project_version: str = None, verbose: bool = False):
-        if project_name is None:
-            project_name = dir_path
+    def parse(input_path: str, output_dir: str, project_name: str = None, project_version: str = None,
+              verbose: bool = False, shallow: bool = False):
 
-        tree = Parser._to_package_structure(
-            Parser._generate_tree_from_list(
-                Parser._list_files_hierarchy(dir_path)))
+        if project_name is None:
+            project_name = input_path
+
+        if os.path.isfile(input_path):
+            tree = Parser._generate_tree_from_list([(os.path.dirname(input_path), [], [os.path.basename(input_path)])])
+        elif os.path.isdir(input_path):
+            tree = Parser._generate_tree_from_list(Parser._list_files_hierarchy(input_path, shallow))
+        else:
+            raise ValueError('Invalid input path.')
 
         if verbose:
             print("Project file structure:")
             print(tree)
             print()
 
-        tree.apply(lambda file: Parser.parse_source_file(file), verbose)
+        root_path = tree.directory
+        tree.apply(lambda file: Parser.parse_source_file(file, root_path), verbose)
 
-        PageGenerator.copy_resources()
+        PageGenerator.copy_resources(output_dir)
 
         file_list = []
         tree.traverse(lambda documented_file: file_list.append(documented_file))
 
-        PageGenerator.create_index_page(tree, file_list, project_name, project_version)
-
-        tree.traverse(lambda documented_file: PageGenerator.create_file(tree, documented_file, file_list))
+        tree.traverse(lambda documented_file: PageGenerator.create_file(tree, documented_file, file_list, output_dir))
+        PageGenerator.create_index_page(tree, file_list, project_name, project_version, output_dir)
 
     @staticmethod
-    def _list_files_hierarchy(dir_path: str) -> List:
+    def _list_files_hierarchy(dir_path: str, shallow: bool) -> List:
         result = []
 
         for root, dirs, files in os.walk(dir_path):
+            if shallow:
+                result.append((root, [], files))
+                break
+
             result.append((root, dirs, files))
+
 
         return result
 
@@ -75,27 +84,12 @@ class Parser:
         return root_node
 
     @staticmethod
-    def _to_package_structure(tree: FileTreeNode) -> FileTreeNode:
-        queue = deque()
-        queue.append(tree)
-
-        while queue:
-            tree = queue.popleft()
-            if tree.directory == Parser.SCAN_DIR:
-                if len(tree.children) == 0:
-                    raise Exception('Empty java/ directory.')
-                return tree.children[0]
-
-            for subtree in tree.children:
-                queue.append(subtree)
-
-        raise Exception('No java directory found.')
-
-    @staticmethod
-    def parse_source_file(source_file: SourceFile) -> DocumentedFile:
+    def parse_source_file(source_file: SourceFile, root_path: str) -> DocumentedFile:
         contents = source_file.read_all()
         doc_file = Parser.parse_structure(contents)
-        doc_file.file_path = source_file.file_path
+
+        rel_file_path = os.path.relpath(source_file.file_path, root_path)
+        doc_file.file_path = rel_file_path
         return doc_file
 
     @staticmethod
@@ -116,7 +110,7 @@ class Parser:
 
         for obj in iterator:
             if isinstance(obj, MultilineComment):
-                if len(stack) == 0:
+                if len(stack) == 0 and file.file_doc is None:
                     file.file_doc = obj.value
 
             elif isinstance(obj, DocumentedClass) or \
@@ -131,7 +125,6 @@ class Parser:
 
             elif isinstance(obj, DocumentedProperty):
                 if len(stack) == 0:
-                    print('Can\'t assign property', obj, 'anywhere')
                     continue
 
                 if isinstance(stack[-1], DocumentedClass) or isinstance(stack[-1], DocumentedEnum):
@@ -139,7 +132,6 @@ class Parser:
 
             elif isinstance(obj, DocumentedMethod):
                 if len(stack) == 0:
-                    print('Can\'t assign method', obj, 'anywhere')
                     continue
 
                 if isinstance(stack[-1], DocumentedClass) or \
@@ -152,7 +144,6 @@ class Parser:
 
             elif isinstance(obj, EnumValue):
                 if len(stack) == 0:
-                    print('Can\'t assign enum value', obj, 'anywhere')
                     continue
 
                 if isinstance(stack[-1], DocumentedEnum):
@@ -162,7 +153,7 @@ class Parser:
                 try:
                     stack.pop()
                 except IndexError:
-                    print("Unexpected closing bracket")
+                    continue
 
             elif isinstance(obj, Delimiter) and obj.char == '{':
                 stack.append(None)
@@ -184,12 +175,14 @@ class Parser:
 
         for state, tokens in token_states:
             if state == 'ImportState':
-                imports.add_name(tokens[1].value)
+                if len(tokens) > 1:
+                    imports.add_name(tokens[1].value)
 
             elif state == 'PackageState':
-                package.name = tokens[1].value
-                yield package
-                package = PackageName()
+                if len(tokens) > 1:
+                    package.name = tokens[1].value
+                    yield package
+                    package = PackageName()
 
             elif state == 'DeclarationWithDocsState':
                 declaration.docs = tokens[0].value
